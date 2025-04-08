@@ -1,0 +1,859 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - user
+    - tidy_feedback
+id: tidy_feedback_list
+label: "Tidy Feedback List"
+module: views
+description: "Lists all feedback submissions"
+tag: ""
+base_table: tidy_feedback
+base_field: id
+display:
+  default:
+    display_plugin: default
+    id: default
+    display_title: Default
+    position: 0
+    display_options:
+      access:
+        type: perm
+        options:
+          perm: "view tidy feedback reports"
+      cache:
+        type: tag
+        options: {}
+      query:
+        type: views_query
+        options:
+          disable_sql_rewrite: false
+          distinct: false
+          replica: false
+          query_comment: ""
+          query_tags: {}
+      exposed_form:
+        type: basic
+        options:
+          submit_button: Apply
+          reset_button: true
+          reset_button_label: Reset
+          exposed_sorts_label: "Sort by"
+          expose_sort_order: true
+          sort_asc_label: Asc
+          sort_desc_label: Desc
+      pager:
+        type: full
+        options:
+          items_per_page: 25
+          offset: 0
+          id: 0
+          total_pages: null
+          tags:
+            previous: "‹ Previous"
+            next: "Next ›"
+            first: "« First"
+            last: "Last »"
+          expose:
+            items_per_page: true
+            items_per_page_label: "Items per page"
+            items_per_page_options: "10, 25, 50, 100"
+            items_per_page_options_all: false
+            items_per_page_options_all_label: "- All -"
+            offset: false
+            offset_label: Offset
+          quantity: 9
+      style:
+        type: table
+        options:
+          grouping: {}
+          row_class: ""
+          default_row_class: true
+          override: true
+          sticky: false
+          caption: ""
+          summary: ""
+          description: ""
+          columns:
+            id: id
+            uid: uid
+            created: created
+            issue_type: issue_type
+            severity: severity
+            description: description
+            url: url
+            status: status
+            operations: operations
+          info:
+            id:
+              sortable: true
+              default_sort_order: desc
+              align: ""
+              separator: ""
+              empty_column: false
+              responsive: ""
+            uid:
+              sortable: true
+              default_sort_order: asc
+              align: ""
+              separator: ""
+              empty_column: false
+              responsive: ""
+            created:
+              sortable: true
+              default_sort_order: desc
+              align: ""
+              separator: ""
+              empty_column: false
+              responsive: ""
+            issue_type:
+              sortable: true
+              default_sort_order: asc
+              align: ""
+              separator: ""
+              empty_column: false
+              responsive: ""
+            severity:
+              sortable: true
+              default_sort_order: asc
+              align: ""
+              separator: ""
+              empty_column: false
+              responsive: ""
+            description:
+              sortable: false
+              default_sort_order: asc
+              align: ""
+              separator: ""
+              empty_column: false
+              responsive: ""
+            url:
+              sortable: true
+              default_sort_order: asc
+              align: ""
+              separator: ""
+              empty_column: false
+              responsive: ""
+            status:
+              sortable: true
+              default_sort_order: asc
+              align: ""
+              separator: ""
+              empty_column: false
+              responsive: ""
+            operations:
+              align: ""
+              separator: ""
+              empty_column: false
+              responsive: ""
+          default: created
+          empty_table: true
+      row:
+        type: fields
+      fields:
+        id:
+          id: id
+          table: tidy_feedback
+          field: id
+          relationship: none
+          group_type: group
+          admin_label: ""
+          label: ID
+          exclude: false
+          alter:
+            alter_text: false
+            text: ""
+            make_link: false
+            path: ""
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ""
+            rel: ""
+            link_class: ""
+            prefix: ""
+            suffix: ""
+            target: ""
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ""
+            more_link_path: ""
+            strip_tags: false
+            trim: false
+            preserve_tags: ""
+            html: false
+          element_type: ""
+          element_class: ""
+          element_label_type: ""
+          element_label_class: ""
+          element_label_colon: true
+          element_wrapper_type: ""
+          element_wrapper_class: ""
+          element_default_classes: true
+          empty: ""
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          plugin_id: numeric
+        uid:
+          id: uid
+          table: tidy_feedback
+          field: uid
+          relationship: none
+          group_type: group
+          admin_label: ""
+          label: User
+          exclude: false
+          alter:
+            alter_text: false
+            text: ""
+            make_link: false
+            path: ""
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ""
+            rel: ""
+            link_class: ""
+            prefix: ""
+            suffix: ""
+            target: ""
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ""
+            more_link_path: ""
+            strip_tags: false
+            trim: false
+            preserve_tags: ""
+            html: false
+          element_type: ""
+          element_class: ""
+          element_label_type: ""
+          element_label_class: ""
+          element_label_colon: true
+          element_wrapper_type: ""
+          element_wrapper_class: ""
+          element_default_classes: true
+          empty: ""
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          entity_type: user
+          entity_field: uid
+          plugin_id: user_name
+        created:
+          id: created
+          table: tidy_feedback
+          field: created
+          relationship: none
+          group_type: group
+          admin_label: ""
+          label: Created
+          exclude: false
+          alter:
+            alter_text: false
+            text: ""
+            make_link: false
+            path: ""
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ""
+            rel: ""
+            link_class: ""
+            prefix: ""
+            suffix: ""
+            target: ""
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ""
+            more_link_path: ""
+            strip_tags: false
+            trim: false
+            preserve_tags: ""
+            html: false
+          element_type: ""
+          element_class: ""
+          element_label_type: ""
+          element_label_class: ""
+          element_label_colon: true
+          element_wrapper_type: ""
+          element_wrapper_class: ""
+          element_default_classes: true
+          empty: ""
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          date_format: medium
+          custom_date_format: ""
+          timezone: ""
+          plugin_id: date
+        issue_type:
+          id: issue_type
+          table: tidy_feedback
+          field: issue_type
+          relationship: none
+          group_type: group
+          admin_label: ""
+          label: "Issue Type"
+          exclude: false
+          alter:
+            alter_text: false
+            text: ""
+            make_link: false
+            path: ""
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ""
+            rel: ""
+            link_class: ""
+            prefix: ""
+            suffix: ""
+            target: ""
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ""
+            more_link_path: ""
+            strip_tags: false
+            trim: false
+            preserve_tags: ""
+            html: false
+          element_type: ""
+          element_class: ""
+          element_label_type: ""
+          element_label_class: ""
+          element_label_colon: true
+          element_wrapper_type: ""
+          element_wrapper_class: ""
+          element_default_classes: true
+          empty: ""
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          plugin_id: standard
+        severity:
+          id: severity
+          table: tidy_feedback
+          field: severity
+          relationship: none
+          group_type: group
+          admin_label: ""
+          label: Severity
+          exclude: false
+          alter:
+            alter_text: false
+            text: ""
+            make_link: false
+            path: ""
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ""
+            rel: ""
+            link_class: ""
+            prefix: ""
+            suffix: ""
+            target: ""
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ""
+            more_link_path: ""
+            strip_tags: false
+            trim: false
+            preserve_tags: ""
+            html: false
+          element_type: ""
+          element_class: ""
+          element_label_type: ""
+          element_label_class: ""
+          element_label_colon: true
+          element_wrapper_type: ""
+          element_wrapper_class: ""
+          element_default_classes: true
+          empty: ""
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          plugin_id: standard
+        description:
+          id: description
+          table: tidy_feedback
+          field: description
+          relationship: none
+          group_type: group
+          admin_label: ""
+          label: Description
+          exclude: false
+          alter:
+            alter_text: false
+            text: ""
+            make_link: false
+            path: ""
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ""
+            rel: ""
+            link_class: ""
+            prefix: ""
+            suffix: ""
+            target: ""
+            nl2br: true
+            max_length: 200
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ""
+            more_link_path: ""
+            strip_tags: true
+            trim: true
+            preserve_tags: ""
+            html: true
+          element_type: ""
+          element_class: ""
+          element_label_type: ""
+          element_label_class: ""
+          element_label_colon: true
+          element_wrapper_type: ""
+          element_wrapper_class: ""
+          element_default_classes: true
+          empty: ""
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          plugin_id: standard
+        url:
+          id: url
+          table: tidy_feedback
+          field: url
+          relationship: none
+          group_type: group
+          admin_label: ""
+          label: URL
+          exclude: false
+          alter:
+            alter_text: false
+            text: ""
+            make_link: true
+            path: "{{ url }}"
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: "Visit page"
+            rel: ""
+            link_class: ""
+            prefix: ""
+            suffix: ""
+            target: _blank
+            nl2br: false
+            max_length: 30
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ""
+            more_link_path: ""
+            strip_tags: false
+            trim: true
+            preserve_tags: ""
+            html: false
+          element_type: ""
+          element_class: ""
+          element_label_type: ""
+          element_label_class: ""
+          element_label_colon: true
+          element_wrapper_type: ""
+          element_wrapper_class: ""
+          element_default_classes: true
+          empty: ""
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          plugin_id: standard
+        status:
+          id: status
+          table: tidy_feedback
+          field: status
+          relationship: none
+          group_type: group
+          admin_label: ""
+          label: Status
+          exclude: false
+          alter:
+            alter_text: false
+            text: ""
+            make_link: false
+            path: ""
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ""
+            rel: ""
+            link_class: ""
+            prefix: ""
+            suffix: ""
+            target: ""
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ""
+            more_link_path: ""
+            strip_tags: false
+            trim: false
+            preserve_tags: ""
+            html: false
+          element_type: ""
+          element_class: ""
+          element_label_type: ""
+          element_label_class: ""
+          element_label_colon: true
+          element_wrapper_type: ""
+          element_wrapper_class: ""
+          element_default_classes: true
+          empty: ""
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          plugin_id: standard
+        operations:
+          id: operations
+          table: tidy_feedback
+          field: operations
+          relationship: none
+          group_type: group
+          admin_label: ""
+          label: Operations
+          exclude: false
+          alter:
+            alter_text: false
+            text: ""
+            make_link: false
+            path: ""
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ""
+            rel: ""
+            link_class: ""
+            prefix: ""
+            suffix: ""
+            target: ""
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ""
+            more_link_path: ""
+            strip_tags: false
+            trim: false
+            preserve_tags: ""
+            html: false
+          element_type: ""
+          element_class: ""
+          element_label_type: ""
+          element_label_class: ""
+          element_label_colon: true
+          element_wrapper_type: ""
+          element_wrapper_class: ""
+          element_default_classes: true
+          empty: ""
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          destination: true
+          plugin_id: entity_operations
+      filters:
+        issue_type:
+          id: issue_type
+          table: tidy_feedback
+          field: issue_type
+          relationship: none
+          group_type: group
+          admin_label: ""
+          operator: in
+          value:
+            bug: bug
+            enhancement: enhancement
+            question: question
+            other: other
+          group: 1
+          exposed: true
+          expose:
+            operator_id: issue_type_op
+            label: "Issue Type"
+            description: ""
+            use_operator: false
+            operator: issue_type_op
+            operator_limit_selection: false
+            operator_list: {}
+            identifier: issue_type
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+              anonymous: "0"
+              administrator: "0"
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ""
+            description: ""
+            identifier: ""
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {}
+            group_items: {}
+          plugin_id: in_operator
+        severity:
+          id: severity
+          table: tidy_feedback
+          field: severity
+          relationship: none
+          group_type: group
+          admin_label: ""
+          operator: in
+          value:
+            critical: critical
+            high: high
+            normal: normal
+            low: low
+          group: 1
+          exposed: true
+          expose:
+            operator_id: severity_op
+            label: Severity
+            description: ""
+            use_operator: false
+            operator: severity_op
+            operator_limit_selection: false
+            operator_list: {}
+            identifier: severity
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+              anonymous: "0"
+              administrator: "0"
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ""
+            description: ""
+            identifier: ""
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {}
+            group_items: {}
+          plugin_id: in_operator
+        status:
+          id: status
+          table: tidy_feedback
+          field: status
+          relationship: none
+          group_type: group
+          admin_label: ""
+          operator: in
+          value:
+            new: new
+            in_progress: in_progress
+            resolved: resolved
+            closed: closed
+          group: 1
+          exposed: true
+          expose:
+            operator_id: status_op
+            label: Status
+            description: ""
+            use_operator: false
+            operator: status_op
+            operator_limit_selection: false
+            operator_list: {}
+            identifier: status
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+              anonymous: "0"
+              administrator: "0"
+            reduce: false
+          is_grouped: false
+          group_info:
+            label: ""
+            description: ""
+            identifier: ""
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {}
+            group_items: {}
+          plugin_id: in_operator
+        created:
+          id: created
+          table: tidy_feedback
+          field: created
+          relationship: none
+          group_type: group
+          admin_label: ""
+          operator: ">"
+          value:
+            min: ""
+            max: ""
+            value: "-30 days"
+            type: offset
+          group: 1
+          exposed: true
+          expose:
+            operator_id: created_op
+            label: "Created after"
+            description: ""
+            use_operator: false
+            operator: created_op
+            operator_limit_selection: false
+            operator_list: {}
+            identifier: created
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+              anonymous: "0"
+              administrator: "0"
+          is_grouped: false
+          group_info:
+            label: ""
+            description: ""
+            identifier: ""
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {}
+            group_items: {}
+          plugin_id: date
+      sorts:
+        created:
+          id: created
+          table: tidy_feedback
+          field: created
+          relationship: none
+          group_type: group
+          admin_label: ""
+          order: DESC
+          exposed: true
+          expose:
+            label: Created
+          plugin_id: date
+      title: "Tidy Feedback"
+      header:
+        result:
+          id: result
+          table: views
+          field: result
+          relationship: none
+          group_type: group
+          admin_label: ""
+          empty: false
+          content: "Displaying @start - @end of @total feedback items"
+          plugin_id: result
+      footer: {}
+      empty:
+        area:
+          id: area
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ""
+          empty: true
+          tokenize: false
+          content:
+            value: "No feedback submissions found."
+            format: basic_html
+          plugin_id: text
+      relationships: {}
+      arguments: {}
+      display_extenders: {}
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - "languages:language_content"
+        - "languages:language_interface"
+        - url
+        - url.query_args
+        - user.permissions
+      tags: {}
+  page_1:
+    display_plugin: page
+    id: page_1
+    display_title: Page
+    position: 1
+    display_options:
+      display_extenders: {}
+      path: admin/reports/tidy-feedback
+      menu:
+        type: normal
+        title: "Tidy Feedback"
+        description: "User feedback reports"
+        weight: 0
+        expanded: false
+        menu_name: admin
+        parent: system.admin_reports
+        context: "0"
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - "languages:language_content"
+        - "languages:language_interface"
+        - url
+        - url.query_args
+        - user.permissions
+      tags: {}

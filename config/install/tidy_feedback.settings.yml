@@ -1,0 +1,5 @@
+# Default configuration for Tidy Feedback
+banner_position: right
+highlight_color: "#ff0000"
+enable_screenshots: false
+notify_email: ""

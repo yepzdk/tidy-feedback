@@ -1,0 +1,9 @@
+name: Tidy Feedback
+type: module
+description: "Collects user feedback through an interactive interface with element highlighting."
+package: Testing
+core_version_requirement: ^9 || ^10
+dependencies:
+  - drupal:views
+  - drupal:block
+  - drupal:field

@@ -1,0 +1,13 @@
+tidy_feedback.tidy_feedback.*:
+  type: config_entity
+  label: "Tidy Feedback"
+  mapping:
+    id:
+      type: string
+      label: "ID"
+    uuid:
+      type: string
+      label: "UUID"
+    label:
+      type: label
+      label: "Label"

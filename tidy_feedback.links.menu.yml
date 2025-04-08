@@ -1,0 +1,13 @@
+tidy_feedback.settings:
+  title: "Tidy Feedback"
+  description: "Configure Tidy Feedback settings"
+  parent: system.admin_config_system
+  route_name: tidy_feedback.settings
+  weight: 10
+
+tidy_feedback.admin:
+  title: "Tidy Feedback"
+  description: "Manage user feedback submissions"
+  parent: system.admin_reports
+  route_name: entity.tidy_feedback.collection
+  weight: 0

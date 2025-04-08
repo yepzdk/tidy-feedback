@@ -1,0 +1,157 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the Tidy Feedback module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function tidy_feedback_schema() {
+  $schema['tidy_feedback'] = [
+    'description' => 'Stores feedback submissions.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Feedback submission ID.',
+      ],
+      'uuid' => [
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Unique identifier for this entity.',
+      ],
+      'uid' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The {users}.uid that submitted the feedback.',
+      ],
+      'created' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Timestamp when feedback was submitted.',
+      ],
+      'changed' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Timestamp when feedback was last changed.',
+      ],
+      'issue_type' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Type of issue reported.',
+      ],
+      'severity' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => 'normal',
+        'description' => 'Severity level of the issue.',
+      ],
+      'description__value' => [
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+        'description' => 'Description of the feedback.',
+      ],
+      'description__format' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'Text format for description.',
+      ],
+      'url' => [
+        'type' => 'varchar',
+        'length' => 2048,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'URL where feedback was submitted.',
+      ],
+      'element_selector' => [
+        'type' => 'varchar',
+        'length' => 2048,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'CSS selector for the element.',
+      ],
+      'browser_info' => [
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Browser information.',
+      ],
+      'status' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => 'new',
+        'description' => 'Status of the feedback item.',
+      ],
+      'admin_comments__value' => [
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+        'description' => 'Administrative comments about the feedback.',
+      ],
+      'admin_comments__format' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'Text format for admin comments.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'uid' => ['uid'],
+      'created' => ['created'],
+      'status' => ['status'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function tidy_feedback_install() {
+  // Set default permissions for the module.
+  $roles = \Drupal::entityTypeManager()->getStorage('user_role')->loadMultiple();
+
+  // Allow administrators to access all functionality.
+  if (isset($roles['administrator'])) {
+    user_role_grant_permissions('administrator', [
+      'administer tidy feedback',
+      'access tidy feedback',
+      'view tidy feedback reports',
+    ]);
+  }
+
+  \Drupal::messenger()->addStatus(t('Tidy Feedback module has been installed. Configure permissions to allow users to submit feedback.'));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function tidy_feedback_uninstall() {
+  // Delete configuration
+  \Drupal::configFactory()->getEditable('tidy_feedback.settings')->delete();
+
+  // Make sure we safely handle the table during uninstall
+  try {
+    $schema = \Drupal::database()->schema();
+    if ($schema->tableExists('tidy_feedback')) {
+      $schema->dropTable('tidy_feedback');
+    }
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('tidy_feedback')->error('Error dropping table during uninstall: @error', ['@error' => $e->getMessage()]);
+  }
+}

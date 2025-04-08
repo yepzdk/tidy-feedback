@@ -1,0 +1,62 @@
+/**
+ * @file
+ * Styles for the Tidy Feedback banner.
+ */
+
+/* Base banner styling */
+.tidy-feedback-banner {
+    position: fixed;
+    width: 40px;
+    height: 150px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #0078d7;
+    color: white;
+    z-index: 990;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 4px 0 0 4px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Banner positioning */
+.tidy-feedback-banner.position-right {
+    right: 0;
+    border-radius: 4px 0 0 4px;
+}
+
+.tidy-feedback-banner.position-left {
+    left: 0;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Banner icon using ::before pseudo-element */
+.tidy-feedback-banner::before {
+    content: "Feedback";
+    white-space: nowrap;
+    transform: rotate(-90deg);
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Active state styling */
+.tidy-feedback-banner.active {
+    background-color: #d9534f;
+}
+
+/* Hover state */
+.tidy-feedback-banner:hover {
+    background-color: #106ebe;
+    width: 45px;
+}
+
+/* Focus state for accessibility */
+.tidy-feedback-banner:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: -4px;
+}

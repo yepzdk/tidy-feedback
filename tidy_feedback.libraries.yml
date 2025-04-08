@@ -1,0 +1,16 @@
+tidy_feedback:
+  version: 1.x
+  css:
+    theme:
+      css/tidy-feedback-banner.css: {}
+      css/tidy-feedback-highlighter.css: {}
+      css/tidy-feedback-form.css: {}
+  js:
+    js/tidy-feedback-highlighter.js: {}
+    js/tidy-feedback-modal.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/once
+    - core/drupal.dialog.ajax

@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ * Contains tidy_feedback.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_help().
+ */
+function tidy_feedback_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.tidy_feedback':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The Tidy Feedback module provides an interactive way for testers to submit feedback about specific elements on your website.') . '</p>';
+      $output .= '<h3>' . t('Uses') . '</h3>';
+      $output .= '<p>' . t('Enable the feedback banner to allow users to highlight and provide feedback on specific page elements.') . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_page_attachments().
+ */
+function tidy_feedback_page_attachments(array &$attachments) {
+  $current_user = \Drupal::currentUser();
+
+  // Only add for users with permission.
+  if ($current_user->hasPermission('access tidy feedback')) {
+    $attachments['#attached']['library'][] = 'tidy_feedback/tidy_feedback';
+
+    // Debug message to console
+    $attachments['#attached']['drupalSettings']['tidyFeedback']['debug'] = 'Banner should be visible';
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function tidy_feedback_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id === 'tidy_feedback_form') {
+    $form['#attached']['library'][] = 'tidy_feedback/tidy_feedback_form';
+  }
+}

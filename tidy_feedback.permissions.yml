@@ -1,0 +1,12 @@
+access tidy feedback:
+  title: "Access tidy feedback"
+  description: "Allow users to submit feedback through the Tidy Feedback system."
+
+administer tidy feedback:
+  title: "Administer tidy feedback"
+  description: "Allow users to configure the Tidy Feedback module."
+  restrict access: true
+
+view tidy feedback reports:
+  title: "View tidy feedback reports"
+  description: "Allow users to view feedback reports and submissions."

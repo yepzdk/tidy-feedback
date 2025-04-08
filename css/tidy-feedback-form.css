@@ -1,0 +1,50 @@
+/* Styling for the simple form */
+#tidy-feedback-simple-form {
+    padding: 15px;
+}
+
+#tidy-feedback-simple-form .form-item {
+    margin-bottom: 15px;
+}
+
+#tidy-feedback-simple-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+#tidy-feedback-simple-form select,
+#tidy-feedback-simple-form textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#tidy-feedback-simple-form textarea {
+    min-height: 100px;
+}
+
+#tidy-feedback-simple-form .form-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+#tidy-feedback-simple-form button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#tidy-feedback-simple-form button[type="submit"] {
+    background-color: #0078d7;
+    color: white;
+    border: none;
+}
+
+#tidy-feedback-simple-form button#feedback-cancel {
+    background-color: #f1f1f1;
+    border: 1px solid #ccc;
+}

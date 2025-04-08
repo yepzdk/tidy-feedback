@@ -1,0 +1,69 @@
+tidy_feedback.settings:
+  path: "/admin/config/system/tidy-feedback"
+  defaults:
+    _form: '\Drupal\tidy_feedback\Form\TidyFeedbackSettingsForm'
+    _title: "Tidy Feedback Settings"
+  requirements:
+    _permission: "administer tidy feedback"
+
+tidy_feedback.submit:
+  path: "/tidy-feedback/submit"
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackController::saveFeedback'
+    _title: "Submit Feedback"
+  requirements:
+    _permission: "access tidy feedback"
+  methods: [POST]
+  options:
+    no_cache: TRUE
+
+tidy_feedback.submit_direct:
+  path: "/tidy-feedback/submit"
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackController::submitDirectFeedback'
+    _title: "Submit Feedback"
+  requirements:
+    _permission: "access tidy feedback"
+  methods: [POST]
+  options:
+    no_cache: TRUE
+
+tidy_feedback.form:
+  path: "/tidy-feedback/form"
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackFormController::getForm'
+    _title: "Submit Feedback"
+  requirements:
+    _permission: "access tidy feedback"
+
+entity.tidy_feedback.canonical:
+  path: "/admin/reports/tidy-feedback/{tidy_feedback}"
+  defaults:
+    _entity_view: "tidy_feedback"
+    _title_callback: '\Drupal\tidy_feedback\Controller\TidyFeedbackController::getTitle'
+  requirements:
+    _permission: "view tidy feedback reports"
+
+entity.tidy_feedback.collection:
+  path: "/admin/reports/tidy-feedback"
+  defaults:
+    _entity_list: "tidy_feedback"
+    _title: "Feedback Reports"
+  requirements:
+    _permission: "view tidy feedback reports"
+
+entity.tidy_feedback.edit_form:
+  path: "/admin/reports/tidy-feedback/{tidy_feedback}/edit"
+  defaults:
+    _entity_form: "tidy_feedback.edit"
+    _title: "Edit Feedback"
+  requirements:
+    _permission: "administer tidy feedback"
+
+entity.tidy_feedback.delete_form:
+  path: "/admin/reports/tidy-feedback/{tidy_feedback}/delete"
+  defaults:
+    _entity_form: "tidy_feedback.delete"
+    _title: "Delete Feedback"
+  requirements:
+    _permission: "administer tidy feedback"
