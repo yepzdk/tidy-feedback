@@ -88,7 +88,7 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
             ->setLabel(t("Changed"))
             ->setDescription(t("The time that the feedback was last edited."));
 
-        $fields["issue_type"] = BaseFieldDefinition::create("list")
+        $fields["issue_type"] = BaseFieldDefinition::create("string")
             ->setLabel(t("Issue Type"))
             ->setDescription(t("The type of issue being reported."))
             ->setSettings([
@@ -98,11 +98,12 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
                     "question" => t("Question"),
                     "other" => t("Other"),
                 ],
+                "max_length" => 64,
             ])
             ->setRequired(true)
             ->setDisplayOptions("view", [
                 "label" => "above",
-                "type" => "list_default",
+                "type" => "string",
                 "weight" => 1,
             ])
             ->setDisplayOptions("form", [
@@ -112,7 +113,7 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
             ->setDisplayConfigurable("form", true)
             ->setDisplayConfigurable("view", true);
 
-        $fields["severity"] = BaseFieldDefinition::create("list")
+        $fields["severity"] = BaseFieldDefinition::create("string")
             ->setLabel(t("Severity"))
             ->setDescription(t("The severity of the issue."))
             ->setSettings([
@@ -122,12 +123,13 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
                     "normal" => t("Normal"),
                     "low" => t("Low"),
                 ],
+                "max_length" => 64,
             ])
             ->setDefaultValue("normal")
             ->setRequired(true)
             ->setDisplayOptions("view", [
                 "label" => "above",
-                "type" => "list_default",
+                "type" => "string",
                 "weight" => 2,
             ])
             ->setDisplayOptions("form", [
@@ -205,7 +207,7 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
             ->setDisplayConfigurable("form", true)
             ->setDisplayConfigurable("view", true);
 
-        $fields["status"] = BaseFieldDefinition::create("list")
+        $fields["status"] = BaseFieldDefinition::create("string")
             ->setLabel(t("Status"))
             ->setDescription(t("The status of the feedback."))
             ->setSettings([
@@ -215,12 +217,13 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
                     "resolved" => t("Resolved"),
                     "closed" => t("Closed"),
                 ],
+                "max_length" => 64,
             ])
             ->setDefaultValue("new")
             ->setRequired(true)
             ->setDisplayOptions("view", [
                 "label" => "above",
-                "type" => "list_default",
+                "type" => "string",
                 "weight" => 7,
             ])
             ->setDisplayOptions("form", [
