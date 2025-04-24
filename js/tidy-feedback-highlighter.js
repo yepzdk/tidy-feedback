@@ -14,7 +14,7 @@
       const bannerPosition =
         drupalSettings.tidyFeedback?.bannerPosition || "right";
       const highlightColor =
-        drupalSettings.tidyFeedback?.highlightColor || "#ff0000";
+        drupalSettings.tidyFeedback?.highlightColor || "var(--highlightBorderColor)";
 
       // Only run this once for the document
       if (context === document) {
