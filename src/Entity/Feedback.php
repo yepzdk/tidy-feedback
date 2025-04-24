@@ -88,7 +88,7 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
             ->setLabel(t("Changed"))
             ->setDescription(t("The time that the feedback was last edited."));
 
-        $fields["issue_type"] = BaseFieldDefinition::create("list_string")
+        $fields["issue_type"] = BaseFieldDefinition::create("list")
             ->setLabel(t("Issue Type"))
             ->setDescription(t("The type of issue being reported."))
             ->setSettings([
@@ -112,7 +112,7 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
             ->setDisplayConfigurable("form", true)
             ->setDisplayConfigurable("view", true);
 
-        $fields["severity"] = BaseFieldDefinition::create("list_string")
+        $fields["severity"] = BaseFieldDefinition::create("list")
             ->setLabel(t("Severity"))
             ->setDescription(t("The severity of the issue."))
             ->setSettings([
@@ -205,7 +205,7 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
             ->setDisplayConfigurable("form", true)
             ->setDisplayConfigurable("view", true);
 
-        $fields["status"] = BaseFieldDefinition::create("list_string")
+        $fields["status"] = BaseFieldDefinition::create("list")
             ->setLabel(t("Status"))
             ->setDescription(t("The status of the feedback."))
             ->setSettings([
