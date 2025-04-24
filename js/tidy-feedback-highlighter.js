@@ -34,21 +34,27 @@
 
         // Create highlight guides if they don't exist
         if (
-          !$(".tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical")
+          !$(".tidy-feedback-guide-horizontal-top, .tidy-feedback-guide-horizontal-bottom, .tidy-feedback-guide-vertical-start, .tidy-feedback-guide-vertical-end")
             .length
         ) {
           $("body").append(
             $(
-              '<div class="tidy-feedback-guide-horizontal tidy-feedback-ui"></div>',
+              '<div class="tidy-feedback-guide-horizontal-top tidy-feedback-ui"></div>',
             ),
             $(
-              '<div class="tidy-feedback-guide-vertical tidy-feedback-ui"></div>',
+              '<div class="tidy-feedback-guide-horizontal-bottom tidy-feedback-ui"></div>',
+            ),
+            $(
+              '<div class="tidy-feedback-guide-vertical-start tidy-feedback-ui"></div>',
+            ),
+            $(
+              '<div class="tidy-feedback-guide-vertical-end tidy-feedback-ui"></div>',
             ),
           );
 
           // Apply highlight color from settings
           $(
-            ".tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical",
+            ".tidy-feedback-guide-horizontal-top, .tidy-feedback-guide-horizontal-bottom, .tidy-feedback-guide-vertical-start, .tidy-feedback-guide-vertical-end",
           ).css("border-color", highlightColor);
         }
       }
@@ -110,7 +116,7 @@
 
       // Hide guide lines
       $(
-        ".tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical",
+        "..tidy-feedback-guide-horizontal-top, .tidy-feedback-guide-horizontal-bottom, .tidy-feedback-guide-vertical-start, .tidy-feedback-guide-vertical-end",
       ).hide();
 
       // Update banner tooltip
@@ -133,7 +139,7 @@
     // Skip if element is part of our UI
     if ($(elementUnder).closest(".tidy-feedback-ui, .ui-dialog").length) {
       $(
-        ".tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical",
+        ".tidy-feedback-guide-horizontal-top, .tidy-feedback-guide-horizontal-bottom, .tidy-feedback-guide-vertical-start, .tidy-feedback-guide-vertical-end",
       ).hide();
       return;
     }
@@ -145,13 +151,23 @@
     const height = $target.outerHeight();
 
     // Update guide positions
-    $(".tidy-feedback-guide-horizontal").css({
-      top: offset.top + height / 2,
+    $(".tidy-feedback-guide-horizontal-top").css({
+      top: offset.top,
       display: "block",
     });
 
-    $(".tidy-feedback-guide-vertical").css({
-      left: offset.left + width / 2,
+    $(".tidy-feedback-guide-horizontal-bottom").css({
+      top: offset.top + height,
+      display: "block",
+    });
+
+    $(".tidy-feedback-guide-vertical-start").css({
+      left: offset.left,
+      display: "block",
+    });
+
+    $(".tidy-feedback-guide-vertical-end").css({
+      left: offset.left + width,
       display: "block",
     });
   }

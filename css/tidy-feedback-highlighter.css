@@ -16,7 +16,8 @@
 }
 
 /* Horizontal guide line */
-.tidy-feedback-guide-horizontal {
+.tidy-feedback-guide-horizontal-top,
+.tidy-feedback-guide-horizontal-bottom {
     position: fixed;
     left: 0;
     width: 100%;
@@ -28,7 +29,8 @@
 }
 
 /* Vertical guide line */
-.tidy-feedback-guide-vertical {
+.tidy-feedback-guide-vertical-start,
+.tidy-feedback-guide-vertical-end {
     position: fixed;
     top: 0;
     height: 100%;
