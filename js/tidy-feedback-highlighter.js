@@ -5,8 +5,8 @@
 (function (Drupal, drupalSettings, once) {
   "use strict";
   
-  // Use Drupal's API to get jQuery
-  const $ = Drupal.jQuery;
+  // Get jQuery in a way that works in both Drupal 9+ and Drupal 11
+  const $ = jQuery;
 
   // Variable to track feedback mode state
   let feedbackModeActive = false;
@@ -119,7 +119,7 @@
 
       // Hide guide lines
       $(
-        "..tidy-feedback-guide-horizontal-top, .tidy-feedback-guide-horizontal-bottom, .tidy-feedback-guide-vertical-start, .tidy-feedback-guide-vertical-end",
+        ".tidy-feedback-guide-horizontal-top, .tidy-feedback-guide-horizontal-bottom, .tidy-feedback-guide-vertical-start, .tidy-feedback-guide-vertical-end",
       ).hide();
 
       // Update banner tooltip

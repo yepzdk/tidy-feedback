@@ -5,8 +5,8 @@
 (function (Drupal) {
   "use strict";
   
-  // Use Drupal's API to get jQuery
-  const $ = Drupal.jQuery;
+  // Get jQuery in a way that works in both Drupal 9+ and Drupal 11
+  const $ = jQuery;
 
   Drupal.behaviors.tidyFeedbackModal = {
     attach: function (context, settings) {
