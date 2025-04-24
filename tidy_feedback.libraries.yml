@@ -8,8 +8,10 @@ tidy_feedback:
   js:
     js/tidy-feedback-highlighter.js: {}
     js/tidy-feedback-modal.js: {}
+    js/tidy-feedback-form.js: {}
   dependencies:
     - core/drupal
     - core/drupalSettings
     - core/once
     - core/drupal.dialog.ajax
+    - core/jquery
