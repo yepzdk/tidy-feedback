@@ -2,8 +2,11 @@
  * @file
  * JavaScript for highlighting page elements for feedback.
  */
-(function ($, Drupal, drupalSettings, once) {
+(function (Drupal, drupalSettings, once) {
   "use strict";
+  
+  // Use Drupal's API to get jQuery
+  const $ = Drupal.jQuery;
 
   // Variable to track feedback mode state
   let feedbackModeActive = false;
@@ -395,4 +398,4 @@
   $(document).ajaxError(function (event, jqxhr, settings, error) {
     console.log("AJAX request failed:", settings.url, error);
   });
-})(jQuery, Drupal, drupalSettings, once);
+})(Drupal, drupalSettings, once);

@@ -2,8 +2,11 @@
  * @file
  * JavaScript for the feedback form.
  */
-(function ($, Drupal, once) {
+(function (Drupal, once) {
   "use strict";
+  
+  // Use Drupal's API to get jQuery
+  const $ = Drupal.jQuery;
 
   Drupal.behaviors.tidyFeedbackForm = {
     attach: function (context, settings) {
@@ -36,4 +39,4 @@
       }
     },
   };
-})(jQuery, Drupal, once);
+})(Drupal, once);

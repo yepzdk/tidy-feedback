@@ -9,7 +9,6 @@ tidy_feedback:
     js/tidy-feedback-highlighter.js: {}
     js/tidy-feedback-modal.js: {}
   dependencies:
-    - core/jquery
     - core/drupal
     - core/drupalSettings
     - core/once

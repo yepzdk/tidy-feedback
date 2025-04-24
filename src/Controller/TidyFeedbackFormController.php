@@ -3,14 +3,20 @@
 namespace Drupal\tidy_feedback\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormBuilderInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Drupal\Core\Database\Connection;
+use Drupal\Core\Time\TimeInterface;
+use Drupal\Component\Uuid\UuidInterface;
 
 /**
  * Controller for handling feedback form operations.
  */
-class TidyFeedbackFormController extends ControllerBase
+class TidyFeedbackFormController extends ControllerBase implements ContainerInjectionInterface
 {
     /**
      * The form builder.
@@ -18,16 +24,50 @@ class TidyFeedbackFormController extends ControllerBase
      * @var \Drupal\Core\Form\FormBuilderInterface
      */
     protected $formBuilder;
+    
+    /**
+     * The database connection.
+     *
+     * @var \Drupal\Core\Database\Connection
+     */
+    protected $database;
+
+    /**
+     * The time service.
+     *
+     * @var \Drupal\Core\Time\TimeInterface
+     */
+    protected $time;
+
+    /**
+     * The UUID service.
+     *
+     * @var \Drupal\Component\Uuid\UuidInterface
+     */
+    protected $uuid;
 
     /**
      * Constructs a TidyFeedbackFormController object.
      *
      * @param \Drupal\Core\Form\FormBuilderInterface $form_builder
      *   The form builder.
+     * @param \Drupal\Core\Database\Connection $database
+     *   The database connection.
+     * @param \Drupal\Core\Time\TimeInterface $time
+     *   The time service.
+     * @param \Drupal\Component\Uuid\UuidInterface $uuid
+     *   The UUID service.
      */
-    public function __construct(FormBuilderInterface $form_builder)
-    {
+    public function __construct(
+        FormBuilderInterface $form_builder,
+        Connection $database,
+        TimeInterface $time,
+        UuidInterface $uuid
+    ) {
         $this->formBuilder = $form_builder;
+        $this->database = $database;
+        $this->time = $time;
+        $this->uuid = $uuid;
     }
 
     /**
@@ -35,7 +75,12 @@ class TidyFeedbackFormController extends ControllerBase
      */
     public static function create(ContainerInterface $container)
     {
-        return new static($container->get("form_builder"));
+        return new static(
+            $container->get('form_builder'),
+            $container->get('database'),
+            $container->get('datetime.time'),
+            $container->get('uuid')
+        );
     }
 
     /**
@@ -48,7 +93,7 @@ class TidyFeedbackFormController extends ControllerBase
     {
         try {
             // Log that we're attempting to get the form
-            \Drupal::logger("tidy_feedback")->notice(
+            $this->getLogger('tidy_feedback')->notice(
                 "Attempting to load feedback form"
             );
 
@@ -61,7 +106,7 @@ class TidyFeedbackFormController extends ControllerBase
             return $form;
         } catch (\Exception $e) {
             // Log the error
-            \Drupal::logger("tidy_feedback")->error(
+            $this->getLogger('tidy_feedback')->error(
                 "Error loading feedback form: @error",
                 ["@error" => $e->getMessage()]
             );
@@ -95,7 +140,7 @@ class TidyFeedbackFormController extends ControllerBase
                 $data = $request->request->all();
             }
 
-            \Drupal::logger("tidy_feedback")->notice("Received data: @data", [
+            $this->getLogger('tidy_feedback')->notice("Received data: @data", [
                 "@data" => print_r($data, true),
             ]);
 
@@ -111,14 +156,13 @@ class TidyFeedbackFormController extends ControllerBase
             }
 
             // Insert into database
-            $connection = \Drupal::database();
-            $id = $connection
+            $id = $this->database
                 ->insert("tidy_feedback")
                 ->fields([
-                    "uuid" => \Drupal::service("uuid")->generate(),
-                    "uid" => \Drupal::currentUser()->id(),
-                    "created" => \Drupal::time()->getRequestTime(),
-                    "changed" => \Drupal::time()->getRequestTime(),
+                    "uuid" => $this->uuid->generate(),
+                    "uid" => $this->currentUser()->id(),
+                    "created" => $this->time->getRequestTime(),
+                    "changed" => $this->time->getRequestTime(),
                     "issue_type" => $data["issue_type"] ?? "other",
                     "severity" => $data["severity"] ?? "normal",
                     "description__value" => $data["description"],
@@ -130,7 +174,7 @@ class TidyFeedbackFormController extends ControllerBase
                 ])
                 ->execute();
 
-            \Drupal::logger("tidy_feedback")->notice(
+            $this->getLogger('tidy_feedback')->notice(
                 "Feedback #@id submitted successfully via direct controller.",
                 ["@id" => $id]
             );
@@ -141,7 +185,7 @@ class TidyFeedbackFormController extends ControllerBase
                 "id" => $id,
             ]);
         } catch (\Exception $e) {
-            \Drupal::logger("tidy_feedback")->error(
+            $this->getLogger('tidy_feedback')->error(
                 "Error saving feedback via direct controller: @error",
                 ["@error" => $e->getMessage()]
             );

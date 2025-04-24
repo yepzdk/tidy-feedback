@@ -3,17 +3,69 @@
 namespace Drupal\tidy_feedback\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Database\Connection;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
 use Drupal\user\Entity\User;
+use Drupal\Core\Time\TimeInterface;
+use Drupal\Component\Uuid\UuidInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Controller for handling feedback operations.
  */
-class TidyFeedbackController extends ControllerBase
+class TidyFeedbackController extends ControllerBase implements ContainerInjectionInterface
 {
+    /**
+     * The database connection.
+     *
+     * @var \Drupal\Core\Database\Connection
+     */
+    protected $database;
+
+    /**
+     * The time service.
+     *
+     * @var \Drupal\Core\Time\TimeInterface
+     */
+    protected $time;
+
+    /**
+     * The UUID service.
+     *
+     * @var \Drupal\Component\Uuid\UuidInterface
+     */
+    protected $uuid;
+
+    /**
+     * Constructs a TidyFeedbackController object.
+     *
+     * @param \Drupal\Core\Database\Connection $database
+     *   The database connection.
+     * @param \Drupal\Core\Time\TimeInterface $time
+     *   The time service.
+     * @param \Drupal\Component\Uuid\UuidInterface $uuid
+     *   The UUID service.
+     */
+    public function __construct(Connection $database, TimeInterface $time, UuidInterface $uuid) {
+        $this->database = $database;
+        $this->time = $time;
+        $this->uuid = $uuid;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function create(ContainerInterface $container) {
+        return new static(
+            $container->get('database'),
+            $container->get('datetime.time'),
+            $container->get('uuid')
+        );
+    }
     /**
      * Saves feedback submission from the form.
      *
@@ -35,14 +87,13 @@ class TidyFeedbackController extends ControllerBase
         }
 
         try {
-            $connection = \Drupal::database();
-            $connection
+            $this->database
                 ->insert("tidy_feedback")
                 ->fields([
-                    "uuid" => \Drupal::service("uuid")->generate(),
-                    "uid" => \Drupal::currentUser()->id(),
-                    "created" => \Drupal::time()->getRequestTime(),
-                    "changed" => \Drupal::time()->getRequestTime(),
+                    "uuid" => $this->uuid->generate(),
+                    "uid" => $this->currentUser()->id(),
+                    "created" => $this->time->getRequestTime(),
+                    "changed" => $this->time->getRequestTime(),
                     "issue_type" => $data["issue_type"],
                     "severity" => $data["severity"],
                     "description__value" => $data["description"],
@@ -161,14 +212,13 @@ class TidyFeedbackController extends ControllerBase
             }
 
             // Insert into database
-            $connection = \Drupal::database();
-            $id = $connection
+            $id = $this->database
                 ->insert("tidy_feedback")
                 ->fields([
-                    "uuid" => \Drupal::service("uuid")->generate(),
-                    "uid" => \Drupal::currentUser()->id(),
-                    "created" => \Drupal::time()->getRequestTime(),
-                    "changed" => \Drupal::time()->getRequestTime(),
+                    "uuid" => $this->uuid->generate(),
+                    "uid" => $this->currentUser()->id(),
+                    "created" => $this->time->getRequestTime(),
+                    "changed" => $this->time->getRequestTime(),
                     "issue_type" => $data["issue_type"] ?? "other",
                     "severity" => $data["severity"] ?? "normal",
                     "description__value" => $data["description"],

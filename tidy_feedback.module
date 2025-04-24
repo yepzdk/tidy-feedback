@@ -11,7 +11,7 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Implements hook_help().
  */
-function tidy_feedback_help($route_name, RouteMatchInterface $route_match) {
+function tidy_feedback_help(string $route_name, RouteMatchInterface $route_match): ?string {
   switch ($route_name) {
     case 'help.page.tidy_feedback':
       $output = '';
@@ -26,7 +26,7 @@ function tidy_feedback_help($route_name, RouteMatchInterface $route_match) {
 /**
  * Implements hook_page_attachments().
  */
-function tidy_feedback_page_attachments(array &$attachments) {
+function tidy_feedback_page_attachments(array &$attachments): void {
   $current_user = \Drupal::currentUser();
 
   // Only add for users with permission.
@@ -41,7 +41,7 @@ function tidy_feedback_page_attachments(array &$attachments) {
 /**
  * Implements hook_form_alter().
  */
-function tidy_feedback_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+function tidy_feedback_form_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
   if ($form_id === 'tidy_feedback_form') {
     $form['#attached']['library'][] = 'tidy_feedback/tidy_feedback_form';
   }

@@ -2,8 +2,11 @@
  * @file
  * JavaScript for the feedback modal.
  */
-(function ($, Drupal) {
+(function (Drupal) {
   "use strict";
+  
+  // Use Drupal's API to get jQuery
+  const $ = Drupal.jQuery;
 
   Drupal.behaviors.tidyFeedbackModal = {
     attach: function (context, settings) {
@@ -11,4 +14,4 @@
       // The modal functionality is now handled directly in the highlighter JS
     },
   };
-})(jQuery, Drupal);
+})(Drupal);

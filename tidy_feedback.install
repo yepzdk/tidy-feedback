@@ -8,7 +8,7 @@
 /**
  * Implements hook_schema().
  */
-function tidy_feedback_schema() {
+function tidy_feedback_schema(): array {
   $schema['tidy_feedback'] = [
     'description' => 'Stores feedback submissions.',
     'fields' => [
@@ -121,7 +121,7 @@ function tidy_feedback_schema() {
 /**
  * Implements hook_install().
  */
-function tidy_feedback_install() {
+function tidy_feedback_install(): void {
   // Set default permissions for the module.
   $roles = \Drupal::entityTypeManager()->getStorage('user_role')->loadMultiple();
 
@@ -140,7 +140,7 @@ function tidy_feedback_install() {
 /**
  * Implements hook_uninstall().
  */
-function tidy_feedback_uninstall() {
+function tidy_feedback_uninstall(): void {
   // Delete configuration
   \Drupal::configFactory()->getEditable('tidy_feedback.settings')->delete();
 
