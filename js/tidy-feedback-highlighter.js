@@ -338,16 +338,28 @@
     toggleFeedbackMode();
   }
 
-  // Function
+  /**
+   * Get CSRF token for form submission.
+   *
+   * @param {function} callback - The callback to run with the token.
+   */
   function getCsrfToken(callback) {
-    $.ajax({
-      url: Drupal.url('session/token'),
-      type: 'GET',
-      dataType: 'text',
-      success: function (token) {
-        callback(token);
-      }
-    });
+    if (drupalSettings.token) {
+      callback(drupalSettings.token);
+    }
+    else {
+      $.ajax({
+        url: Drupal.url('session/token'),
+        type: 'GET',
+        dataType: 'text',
+        success: function(token) {
+          callback(token);
+        },
+        error: function(xhr, status, error) {
+          console.error('Error getting CSRF token:', error);
+        }
+      });
+    }
   }
 
   // Function to set browser information

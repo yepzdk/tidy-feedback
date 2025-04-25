@@ -9,9 +9,6 @@ use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Drupal\Core\Url;
-use Drupal\Core\Link;
-use Drupal\user\Entity\User;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Component\Uuid\UuidInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -108,7 +105,7 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
    */
   public function saveFeedback(Request $request) {
     try {
-      $data = json_decode($request->getContent(), true);
+      $data = json_decode($request->getContent(), TRUE);
 
       if (empty($data)) {
         $this->getLogger('tidy_feedback')->warning(
@@ -121,12 +118,12 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
       }
 
       // Process browser_info - it might be a JSON string that needs decoding.
-      $browserInfo = $data["browser_info"] ?? "";
+      $browserInfo = isset($data["browser_info"]) ? $data["browser_info"] : "";
       if (is_string($browserInfo) && !empty($browserInfo)) {
         // Check if it's already a JSON string and store as is.
         if (
           substr($browserInfo, 0, 1) === "{" &&
-          json_decode($browserInfo) !== null
+          json_decode($browserInfo) !== NULL
         ) {
           // It's already valid JSON, keep as is.
         }
@@ -140,19 +137,26 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
         $browserInfo = "{}";
       }
 
+      $referer = $request->headers->get("referer");
+      $url = isset($data["url"]) ? $data["url"] : ($referer ?: '');
+      $issueType = isset($data["issue_type"]) ? $data["issue_type"] : "other";
+      $severity = isset($data["severity"]) ? $data["severity"] : "normal";
+      $description = isset($data["description"]) ? $data["description"] : '';
+      $elementSelector = isset($data["element_selector"]) ? $data["element_selector"] : "";
+
       $id = $this->database
         ->insert("tidy_feedback")
         ->fields([
           "uuid" => $this->uuid->generate(),
-          "uid" => $this->currentUser->id(),  // Use the property not the method
+          "uid" => $this->currentUser->id(),
           "created" => $this->time->getRequestTime(),
           "changed" => $this->time->getRequestTime(),
-          "issue_type" => $data["issue_type"] ?? "other",
-          "severity" => $data["severity"] ?? "normal",
-          "description__value" => $data["description"] ?? '',
+          "issue_type" => $issueType,
+          "severity" => $severity,
+          "description__value" => $description,
           "description__format" => "basic_html",
-          "url" => $data["url"] ?? $request->headers->get("referer") ?? '',
-          "element_selector" => $data["element_selector"] ?? "",
+          "url" => $url,
+          "element_selector" => $elementSelector,
           "browser_info" => $browserInfo,
           "status" => "new",
         ])
@@ -209,7 +213,7 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
   /**
    * Gets the title for the feedback canonical page.
    *
-   * @param \Drupal\tidy_feedback\Entity\Feedback $tidy_feedback
+   * @param object $tidy_feedback
    *   The feedback entity.
    *
    * @return string
@@ -232,8 +236,8 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
     try {
       // Check for JSON content type.
       $contentType = $request->headers->get("Content-Type");
-      if (strpos($contentType, "application/json") !== false) {
-        $data = json_decode($request->getContent(), true);
+      if (strpos($contentType, "application/json") !== FALSE) {
+        $data = json_decode($request->getContent(), TRUE);
       }
       else {
         $data = $request->request->all();
@@ -258,12 +262,12 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
       }
 
       // Process browser_info - it might be a JSON string that needs decoding.
-      $browserInfo = $data["browser_info"] ?? "";
+      $browserInfo = isset($data["browser_info"]) ? $data["browser_info"] : "";
       if (is_string($browserInfo) && !empty($browserInfo)) {
         // Check if it's already a JSON string and store as is.
         if (
           substr($browserInfo, 0, 1) === "{" &&
-          json_decode($browserInfo) !== null
+          json_decode($browserInfo) !== NULL
         ) {
           // It's already valid JSON, keep as is.
         }
@@ -277,20 +281,26 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
         $browserInfo = "{}";
       }
 
+      $referer = $request->headers->get("referer");
+      $url = isset($data["url"]) ? $data["url"] : ($referer ?: '');
+      $issueType = isset($data["issue_type"]) ? $data["issue_type"] : "other";
+      $severity = isset($data["severity"]) ? $data["severity"] : "normal";
+      $elementSelector = isset($data["element_selector"]) ? $data["element_selector"] : "";
+
       // Insert into database.
       $id = $this->database
         ->insert("tidy_feedback")
         ->fields([
           "uuid" => $this->uuid->generate(),
-          "uid" => $this->currentUser->id(),  // Use the property not the method
+          "uid" => $this->currentUser->id(),
           "created" => $this->time->getRequestTime(),
           "changed" => $this->time->getRequestTime(),
-          "issue_type" => $data["issue_type"] ?? "other",
-          "severity" => $data["severity"] ?? "normal",
+          "issue_type" => $issueType,
+          "severity" => $severity,
           "description__value" => $data["description"],
           "description__format" => "basic_html",
-          "url" => $data["url"] ?? $request->headers->get("referer") ?? '',
-          "element_selector" => $data["element_selector"] ?? "",
+          "url" => $url,
+          "element_selector" => $elementSelector,
           "browser_info" => $browserInfo,
           "status" => "new",
         ])

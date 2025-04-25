@@ -158,15 +158,15 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     try {
       // Check for JSON content type.
       $contentType = $request->headers->get("Content-Type");
-      if (strpos($contentType, "application/json") !== false) {
-        $data = json_decode($request->getContent(), true);
+      if (strpos($contentType, "application/json") !== FALSE) {
+        $data = json_decode($request->getContent(), TRUE);
       }
       else {
         $data = $request->request->all();
       }
 
       $this->getLogger('tidy_feedback')->notice("Received data: @data", [
-        "@data" => print_r($data, true),
+        "@data" => print_r($data, TRUE),
       ]);
 
       // Validate required fields.
@@ -181,12 +181,12 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
       }
 
       // Process browser_info - it might be a JSON string that needs decoding.
-      $browserInfo = $data["browser_info"] ?? "";
+      $browserInfo = isset($data["browser_info"]) ? $data["browser_info"] : "";
       if (is_string($browserInfo) && !empty($browserInfo)) {
         // Check if it's already a JSON string and store as is.
         if (
           substr($browserInfo, 0, 1) === "{" &&
-          json_decode($browserInfo) !== null
+          json_decode($browserInfo) !== NULL
         ) {
           // It's already valid JSON, keep as is.
         }
@@ -200,20 +200,26 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
         $browserInfo = "{}";
       }
 
+      $referer = $request->headers->get("referer");
+      $url = isset($data["url"]) ? $data["url"] : ($referer ?: '');
+      $issueType = isset($data["issue_type"]) ? $data["issue_type"] : "other";
+      $severity = isset($data["severity"]) ? $data["severity"] : "normal";
+      $elementSelector = isset($data["element_selector"]) ? $data["element_selector"] : "";
+
       // Insert into database.
       $id = $this->database
         ->insert("tidy_feedback")
         ->fields([
           "uuid" => $this->uuid->generate(),
-          "uid" => $this->currentUser->id(),  // Use the proper property instead of calling a method.
+          "uid" => $this->currentUser->id(),
           "created" => $this->time->getRequestTime(),
           "changed" => $this->time->getRequestTime(),
-          "issue_type" => $data["issue_type"] ?? "other",
-          "severity" => $data["severity"] ?? "normal",
+          "issue_type" => $issueType,
+          "severity" => $severity,
           "description__value" => $data["description"],
           "description__format" => "basic_html",
-          "url" => $data["url"] ?? $request->headers->get("referer"),
-          "element_selector" => $data["element_selector"] ?? "",
+          "url" => $url,
+          "element_selector" => $elementSelector,
           "browser_info" => $browserInfo,
           "status" => "new",
         ])

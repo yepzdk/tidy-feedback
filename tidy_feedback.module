@@ -11,7 +11,7 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Implements hook_help().
  */
-function tidy_feedback_help(string $route_name, RouteMatchInterface $route_match): ?string {
+function tidy_feedback_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'help.page.tidy_feedback':
       $output = '';
@@ -19,19 +19,22 @@ function tidy_feedback_help(string $route_name, RouteMatchInterface $route_match
       $output .= '<p>' . t('The Tidy Feedback module provides an interactive way for testers to submit feedback about specific elements on your website.') . '</p>';
       return $output;
   }
+  return NULL;
 }
 
 /**
  * Implements hook_page_attachments().
  */
-function tidy_feedback_page_attachments(array &$attachments): void {
+function tidy_feedback_page_attachments(array &$attachments) {
   $current_user = \Drupal::currentUser();
 
   // Only add for users with permission.
   if ($current_user->hasPermission('access tidy feedback')) {
     $attachments['#attached']['library'][] = 'tidy_feedback/tidy_feedback';
+
     // Add the CSRF token to JS settings
     $attachments['#attached']['drupalSettings']['token'] = \Drupal::csrfToken()->get();
+
     // Debug message to console
     $attachments['#attached']['drupalSettings']['tidyFeedback']['debug'] = 'Banner should be visible';
   }
@@ -40,7 +43,7 @@ function tidy_feedback_page_attachments(array &$attachments): void {
 /**
  * Implements hook_form_alter().
  */
-function tidy_feedback_form_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
+function tidy_feedback_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id === 'tidy_feedback_form') {
     $form['#attached']['library'][] = 'tidy_feedback/tidy_feedback_form';
   }
