@@ -23,6 +23,46 @@ class FeedbackForm extends FormBase
     }
 
     /**
+       * The messenger service.
+       *
+       * @var \Drupal\Core\Messenger\MessengerInterface
+       */
+      protected $messenger;
+
+      /**
+       * The database connection.
+       *
+       * @var \Drupal\Core\Database\Connection
+       */
+      protected $database;
+
+      /**
+       * Constructs a FeedbackForm object.
+       *
+       * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+       *   The messenger service.
+       * @param \Drupal\Core\Database\Connection $database
+       *   The database connection.
+       */
+      public function __construct(
+        MessengerInterface $messenger,
+        Connection $database
+      ) {
+        $this->messenger = $messenger;
+        $this->database = $database;
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public static function create(ContainerInterface $container) {
+        return new static(
+          $container->get('messenger'),
+          $container->get('database')
+        );
+      }
+
+    /**
      * {@inheritdoc}
      */
     public function buildForm(array $form, FormStateInterface $form_state)
@@ -121,30 +161,19 @@ class FeedbackForm extends FormBase
     /**
      * AJAX callback for form submission.
      */
-    public function submitAjax(array &$form, FormStateInterface $form_state)
-    {
-        $response = new AjaxResponse();
+     public function submitAjax(array &$form, FormStateInterface $form_state) {
+       $response = new AjaxResponse();
 
-        if ($form_state->getErrors()) {
-            // Return the form with errors.
-            $response->addCommand(
-                new HtmlCommand("#tidy-feedback-form-wrapper", $form)
-            );
-        } else {
-            // Process the submission
-            $this->processFormSubmission($form_state);
+       if ($form_state->getErrors()) {
+         $response->addCommand(new HtmlCommand('#tidy-feedback-form-wrapper', $form));
+       }
+       else {
+         $response->addCommand(new CloseModalDialogCommand());
+         $response->addCommand(new InvokeCommand(NULL, 'tidyFeedbackSuccess'));
+       }
 
-            // Close the modal.
-            $response->addCommand(new CloseModalDialogCommand());
-
-            // Show a success message.
-            $response->addCommand(
-                new InvokeCommand(null, "tidyFeedbackSuccess")
-            );
-        }
-
-        return $response;
-    }
+       return $response;
+     }
 
     /**
      * AJAX callback for cancel button.

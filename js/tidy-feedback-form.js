@@ -2,8 +2,11 @@
  * @file
  * JavaScript for the feedback form.
  */
-(function ($, Drupal, once) {
+(function (Drupal, once) {
   "use strict";
+  
+  // Get jQuery in a way that works in both Drupal 9+ and Drupal 11
+  const $ = jQuery;
 
   Drupal.behaviors.tidyFeedbackForm = {
     attach: function (context, settings) {
@@ -36,4 +39,4 @@
       }
     },
   };
-})(jQuery, Drupal, once);
+})(Drupal, once);
