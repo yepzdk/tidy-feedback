@@ -12,15 +12,15 @@ use Symfony\Component\HttpFoundation\Request;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
 use Drupal\user\Entity\User;
-use Drupal\Component\Datetime\TimeInterface;  // Changed from Core\Time to Component\Datetime
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Component\Uuid\UuidInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Controller for handling feedback operations.
  */
-class TidyFeedbackController extends ControllerBase implements ContainerInjectionInterface
-{
+class TidyFeedbackController extends ControllerBase implements ContainerInjectionInterface {
+
   /**
    * The time service.
    *
@@ -48,6 +48,13 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
    * @var \Drupal\Core\Database\Connection
    */
   protected $database;
+
+  /**
+   * The current user account.
+   *
+   * @var \Drupal\Core\Session\AccountProxyInterface
+   */
+  protected $currentUser;
 
   /**
    * Constructor for TidyFeedbackController.
@@ -99,42 +106,71 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
    * @return \Symfony\Component\HttpFoundation\JsonResponse
    *   JSON response indicating success or failure.
    */
-  public function saveFeedback(Request $request)
-  {
-    $data = json_decode($request->getContent(), true);
-
-    if (empty($data)) {
-      return new JsonResponse(
-        ["status" => "error", "message" => "Invalid data submitted"],
-        400
-      );
-    }
-
+  public function saveFeedback(Request $request) {
     try {
-      $this->database
+      $data = json_decode($request->getContent(), true);
+
+      if (empty($data)) {
+        $this->getLogger('tidy_feedback')->warning(
+          "Empty data received in saveFeedback"
+        );
+        return new JsonResponse(
+          ["status" => "error", "message" => "Invalid data submitted"],
+          400
+        );
+      }
+
+      // Process browser_info - it might be a JSON string that needs decoding.
+      $browserInfo = $data["browser_info"] ?? "";
+      if (is_string($browserInfo) && !empty($browserInfo)) {
+        // Check if it's already a JSON string and store as is.
+        if (
+          substr($browserInfo, 0, 1) === "{" &&
+          json_decode($browserInfo) !== null
+        ) {
+          // It's already valid JSON, keep as is.
+        }
+        else {
+          // Convert to JSON if it's not already.
+          $browserInfo = json_encode(["raw_data" => $browserInfo]);
+        }
+      }
+      else {
+        // If empty or not a string, create an empty JSON object.
+        $browserInfo = "{}";
+      }
+
+      $id = $this->database
         ->insert("tidy_feedback")
         ->fields([
           "uuid" => $this->uuid->generate(),
-          "uid" => $this->currentUser()->id(),
+          "uid" => $this->currentUser->id(),  // Use the property not the method
           "created" => $this->time->getRequestTime(),
           "changed" => $this->time->getRequestTime(),
-          "issue_type" => $data["issue_type"],
-          "severity" => $data["severity"],
-          "description__value" => $data["description"],
+          "issue_type" => $data["issue_type"] ?? "other",
+          "severity" => $data["severity"] ?? "normal",
+          "description__value" => $data["description"] ?? '',
           "description__format" => "basic_html",
-          "url" => $data["url"],
-          "element_selector" => $data["element_selector"],
-          "browser_info" => $data["browser_info"],
+          "url" => $data["url"] ?? $request->headers->get("referer") ?? '',
+          "element_selector" => $data["element_selector"] ?? "",
+          "browser_info" => $browserInfo,
           "status" => "new",
         ])
         ->execute();
 
+      $this->getLogger('tidy_feedback')->notice(
+        "Feedback #@id submitted successfully via saveFeedback.",
+        ["@id" => $id]
+      );
+
       return new JsonResponse([
         "status" => "success",
         "message" => $this->t("Feedback submitted successfully"),
+        "id" => $id,
       ]);
-    } catch (\Exception $e) {
-      \Drupal::logger("tidy_feedback")->error(
+    }
+    catch (\Exception $e) {
+      $this->getLogger('tidy_feedback')->error(
         "Error saving feedback: @error",
         ["@error" => $e->getMessage()]
       );
@@ -151,8 +187,7 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
    * @return array
    *   Render array for the admin overview page.
    */
-  public function adminOverview()
-  {
+  public function adminOverview() {
     // This is a basic controller method that just redirects to the View
     // we'll create for displaying feedback items.
 
@@ -162,7 +197,7 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
       ),
     ];
 
-    // Embed the view in the page
+    // Embed the view in the page.
     $view = views_embed_view("tidy_feedback_list", "default");
     if ($view) {
       $build["view"] = $view;
@@ -180,33 +215,38 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
    * @return string
    *   The page title.
    */
-  public function getTitle($tidy_feedback)
-  {
+  public function getTitle($tidy_feedback) {
     return $this->t("Feedback #@id", ["@id" => $tidy_feedback->id()]);
   }
 
   /**
    * Controller method to handle direct form submissions.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request object.
+   *
+   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   *   JSON response with submission status.
    */
-  public function submitDirectFeedback(Request $request)
-  {
+  public function submitDirectFeedback(Request $request) {
     try {
-      // Check for JSON content type
+      // Check for JSON content type.
       $contentType = $request->headers->get("Content-Type");
       if (strpos($contentType, "application/json") !== false) {
         $data = json_decode($request->getContent(), true);
-      } else {
+      }
+      else {
         $data = $request->request->all();
       }
 
-      \Drupal::logger("tidy_feedback")->notice(
+      $this->getLogger("tidy_feedback")->notice(
         "Received data type: @type",
         [
           "@type" => gettype($data),
         ]
       );
 
-      // Validate required fields
+      // Validate required fields.
       if (empty($data["description"])) {
         return new JsonResponse(
           [
@@ -217,44 +257,46 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
         );
       }
 
-      // Process browser_info - it might be a JSON string that needs decoding
+      // Process browser_info - it might be a JSON string that needs decoding.
       $browserInfo = $data["browser_info"] ?? "";
       if (is_string($browserInfo) && !empty($browserInfo)) {
-        // Check if it's already a JSON string and store as is
+        // Check if it's already a JSON string and store as is.
         if (
           substr($browserInfo, 0, 1) === "{" &&
           json_decode($browserInfo) !== null
         ) {
-          // It's already valid JSON, keep as is
-        } else {
-          // Convert to JSON if it's not already
+          // It's already valid JSON, keep as is.
+        }
+        else {
+          // Convert to JSON if it's not already.
           $browserInfo = json_encode(["raw_data" => $browserInfo]);
         }
-      } else {
-        // If empty or not a string, create an empty JSON object
+      }
+      else {
+        // If empty or not a string, create an empty JSON object.
         $browserInfo = "{}";
       }
 
-      // Insert into database
+      // Insert into database.
       $id = $this->database
         ->insert("tidy_feedback")
         ->fields([
           "uuid" => $this->uuid->generate(),
-          "uid" => $this->currentUser()->id(),
+          "uid" => $this->currentUser->id(),  // Use the property not the method
           "created" => $this->time->getRequestTime(),
           "changed" => $this->time->getRequestTime(),
           "issue_type" => $data["issue_type"] ?? "other",
           "severity" => $data["severity"] ?? "normal",
           "description__value" => $data["description"],
           "description__format" => "basic_html",
-          "url" => $data["url"] ?? $request->headers->get("referer"),
+          "url" => $data["url"] ?? $request->headers->get("referer") ?? '',
           "element_selector" => $data["element_selector"] ?? "",
           "browser_info" => $browserInfo,
           "status" => "new",
         ])
         ->execute();
 
-      \Drupal::logger("tidy_feedback")->notice(
+      $this->getLogger("tidy_feedback")->notice(
         "Feedback #@id submitted successfully via direct controller.",
         ["@id" => $id]
       );
@@ -264,8 +306,9 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
         "message" => "Feedback submitted successfully",
         "id" => $id,
       ]);
-    } catch (\Exception $e) {
-      \Drupal::logger("tidy_feedback")->error(
+    }
+    catch (\Exception $e) {
+      $this->getLogger("tidy_feedback")->error(
         "Error saving feedback via direct controller: @error",
         ["@error" => $e->getMessage()]
       );
@@ -275,4 +318,5 @@ class TidyFeedbackController extends ControllerBase implements ContainerInjectio
       );
     }
   }
+
 }

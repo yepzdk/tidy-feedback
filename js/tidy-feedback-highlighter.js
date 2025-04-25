@@ -21,11 +21,8 @@
 
       // Only run this once for the document
       if (context === document) {
-        console.log("Tidy Feedback highlighter initialized");
-
         // Create the banner if it doesn't exist
         if (!$(".tidy-feedback-banner").length) {
-          console.log("Creating banner");
           const banner = $(
             '<div class="tidy-feedback-banner" role="button" tabindex="0"></div>',
           )
@@ -65,9 +62,7 @@
       // Handle banner click - use once for the banner elements
       once("tidy-feedback-banner", ".tidy-feedback-banner", context).forEach(
         function (banner) {
-          console.log("Attaching click handler to banner");
           $(banner).on("click", function (e) {
-            console.log("Banner clicked");
             toggleFeedbackMode();
             e.preventDefault();
             e.stopPropagation();
@@ -80,7 +75,6 @@
   // Toggle feedback mode
   function toggleFeedbackMode() {
     feedbackModeActive = !feedbackModeActive;
-    console.log("Feedback mode:", feedbackModeActive ? "ON" : "OFF");
 
     // Toggle active class on banner
     $(".tidy-feedback-banner").toggleClass("active", feedbackModeActive);
@@ -91,7 +85,6 @@
         $("body").append(
           '<div id="tidy-feedback-overlay" class="tidy-feedback-ui"></div>',
         );
-        console.log("Overlay created");
       }
 
       // Setup overlay event handlers
@@ -111,8 +104,6 @@
         "title",
         Drupal.t("Click to deactivate feedback mode"),
       );
-
-      console.log("Feedback mode activated");
     } else {
       // Hide overlay and unbind events
       $("#tidy-feedback-overlay").off("mousemove click").hide();
@@ -127,8 +118,6 @@
         "title",
         Drupal.t("Click to activate feedback mode"),
       );
-
-      console.log("Feedback mode deactivated");
     }
   }
 
@@ -189,7 +178,6 @@
 
     // Get element selector
     const elementSelector = getElementSelector(elementUnder);
-    console.log("Clicked on element:", elementSelector);
 
     // Open feedback form
     openFeedbackModal(elementSelector);
@@ -223,8 +211,6 @@
 
   // Function to open feedback modal
   function openFeedbackModal(elementSelector) {
-    console.log("Opening feedback modal for:", elementSelector);
-
     // Create a simple form without relying on Drupal's form API
     var simpleForm = `
       <div id="tidy-feedback-form-wrapper">
@@ -292,7 +278,6 @@
     // Handle form submission
     $("#tidy-feedback-simple-form").on("submit", function (e) {
       e.preventDefault();
-      console.log("Form submitted");
 
       // Collect form data
       var formData = {
@@ -304,38 +289,37 @@
         browser_info: $("#tidy-feedback-browser-info").val(),
       };
 
-      console.log("Submitting data:", formData);
-
-      // Manual AJAX submission
-      $.ajax({
-        url: Drupal.url("tidy-feedback/submit"),
-        type: "POST",
-        data: JSON.stringify(formData),
-        contentType: "application/json",
-        dataType: "json",
-        beforeSend: function (xhr, settings) {
-          xhr.setRequestHeader('X-CSRF-Token', drupalSettings.token);
-        },
-        success: function (response) {
-          console.log("Submission successful:", response);
-          // Close dialog properly using the stored reference
-          var dialogObj = $("#tidy-feedback-modal").data("drupalDialog");
-          if (dialogObj && typeof dialogObj.close === "function") {
-            dialogObj.close();
-          } else {
-            // Fallback method if dialog object isn't available
-            $(".ui-dialog-titlebar-close").click();
-          }
-          showSuccessMessage();
-        },
-        error: function (xhr, status, error) {
-          console.error("Submission error:", error);
-          $("#tidy-feedback-form-wrapper").prepend(
-            '<div class="messages messages--error">' +
-              Drupal.t("Error submitting feedback. Please try again.") +
-              "</div>",
-          );
-        },
+      // Get CSRF token and make the request
+      getCsrfToken(function(token) {
+        // Manual AJAX submission
+        $.ajax({
+          url: Drupal.url("tidy-feedback/submit"),
+          type: "POST",
+          data: JSON.stringify(formData),
+          contentType: "application/json",
+          dataType: "json",
+          headers: {
+            'X-CSRF-Token': token
+          },
+          success: function (response) {
+            // Close dialog properly using the stored reference
+            var dialogObj = $("#tidy-feedback-modal").data("drupalDialog");
+            if (dialogObj && typeof dialogObj.close === "function") {
+              dialogObj.close();
+            } else {
+              // Fallback method if dialog object isn't available
+              $(".ui-dialog-titlebar-close").click();
+            }
+            showSuccessMessage();
+          },
+          error: function (xhr, status, error) {
+            $("#tidy-feedback-form-wrapper").prepend(
+              '<div class="messages messages--error">' +
+                Drupal.t("Error submitting feedback. Please try again.") +
+                "</div>",
+            );
+          },
+        });
       });
     });
 
@@ -352,6 +336,18 @@
 
     // Deactivate feedback mode
     toggleFeedbackMode();
+  }
+
+  // Function
+  function getCsrfToken(callback) {
+    $.ajax({
+      url: Drupal.url('session/token'),
+      type: 'GET',
+      dataType: 'text',
+      success: function (token) {
+        callback(token);
+      }
+    });
   }
 
   // Function to set browser information
@@ -383,22 +379,4 @@
       });
     }, 3000);
   }
-
-  // Debug form submission
-  $(document).on("submit", "#tidy-feedback-form", function () {
-    console.log("Form submit detected");
-  });
-
-  // Debug AJAX events
-  $(document).ajaxSend(function (event, jqxhr, settings) {
-    console.log("AJAX request sent:", settings.url);
-  });
-
-  $(document).ajaxSuccess(function (event, jqxhr, settings) {
-    console.log("AJAX request successful:", settings.url);
-  });
-
-  $(document).ajaxError(function (event, jqxhr, settings, error) {
-    console.log("AJAX request failed:", settings.url, error);
-  });
 })(Drupal, drupalSettings, once);
