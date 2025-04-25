@@ -10,8 +10,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Time\TimeInterface;
+use Drupal\Component\Datetime\TimeInterface;  // Changed from Core\Time to Component\Datetime
 use Drupal\Component\Uuid\UuidInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\Core\Session\AccountProxyInterface;
 
 /**
  * Controller for handling feedback form operations.
@@ -24,7 +26,7 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
      * @var \Drupal\Core\Form\FormBuilderInterface
      */
     protected $formBuilder;
-    
+
     /**
      * The database connection.
      *
@@ -35,7 +37,7 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     /**
      * The time service.
      *
-     * @var \Drupal\Core\Time\TimeInterface
+     * @var \Drupal\Component\Datetime\TimeInterface
      */
     protected $time;
 
@@ -47,27 +49,42 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     protected $uuid;
 
     /**
-     * Constructs a TidyFeedbackFormController object.
+     * The logger factory.
+     *
+     * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
+     */
+    protected $loggerFactory;
+
+    /**
+     * Constructor for TidyFeedbackFormController.
      *
      * @param \Drupal\Core\Form\FormBuilderInterface $form_builder
      *   The form builder.
      * @param \Drupal\Core\Database\Connection $database
      *   The database connection.
-     * @param \Drupal\Core\Time\TimeInterface $time
+     * @param \Drupal\Component\Datetime\TimeInterface $time
      *   The time service.
      * @param \Drupal\Component\Uuid\UuidInterface $uuid
      *   The UUID service.
+     * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
+     *   The logger factory service.
+     * @param \Drupal\Core\Session\AccountProxyInterface $current_user
+     *   The current user.
      */
     public function __construct(
         FormBuilderInterface $form_builder,
         Connection $database,
         TimeInterface $time,
-        UuidInterface $uuid
+        UuidInterface $uuid,
+        LoggerChannelFactoryInterface $logger_factory,
+        AccountProxyInterface $current_user
     ) {
         $this->formBuilder = $form_builder;
         $this->database = $database;
         $this->time = $time;
         $this->uuid = $uuid;
+        $this->loggerFactory = $logger_factory;
+        $this->currentUser = $current_user;
     }
 
     /**
@@ -79,7 +96,9 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
             $container->get('form_builder'),
             $container->get('database'),
             $container->get('datetime.time'),
-            $container->get('uuid')
+            $container->get('uuid'),
+            $container->get('logger.factory'),
+            $container->get('current_user')
         );
     }
 
@@ -132,6 +151,17 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     public function submitDirectFeedback(Request $request)
     {
         try {
+            // Use injected services
+            $id = $this->database->insert('tidy_feedback')
+                ->fields([
+                'uid' => $this->currentUser->id(),
+                // Other fields...
+                ])
+                ->execute();
+
+            $this->loggerFactory->get('tidy_feedback')
+                ->notice('Feedback #@id submitted successfully.', ['@id' => $id]);
+
             // Check for JSON content type
             $contentType = $request->headers->get("Content-Type");
             if (strpos($contentType, "application/json") !== false) {

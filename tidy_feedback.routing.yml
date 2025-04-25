@@ -17,17 +17,6 @@ tidy_feedback.submit:
   options:
     no_cache: TRUE
 
-tidy_feedback.submit_direct:
-  path: "/tidy-feedback/submit"
-  defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackController::submitDirectFeedback'
-    _title: "Submit Feedback"
-  requirements:
-    _permission: "access tidy feedback"
-  methods: [POST]
-  options:
-    no_cache: TRUE
-
 tidy_feedback.form:
   path: "/tidy-feedback/form"
   defaults:
@@ -37,12 +26,12 @@ tidy_feedback.form:
     _permission: "access tidy feedback"
 
 entity.tidy_feedback.canonical:
-  path: "/admin/reports/tidy-feedback/{tidy_feedback}"
+  path: '/tidy-feedback/{tidy_feedback}'
   defaults:
-    _entity_view: "tidy_feedback"
-    _title_callback: '\Drupal\tidy_feedback\Controller\TidyFeedbackController::getTitle'
+    _entity_view: 'tidy_feedback'
+    _title_callback: '\\Drupal\\tidy_feedback\\Controller\\TidyFeedbackController::getTitle'
   requirements:
-    _permission: "view tidy feedback reports"
+    _permission: 'view tidy feedback reports'
 
 entity.tidy_feedback.collection:
   path: "/admin/reports/tidy-feedback"

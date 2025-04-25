@@ -15,16 +15,23 @@ use Drupal\Core\Entity\ContentEntityInterface;
  * @ContentEntityType(
  *   id = "tidy_feedback",
  *   label = @Translation("Tidy Feedback"),
+ *   label_collection = @Translation("Tidy Feedback"),
+ *   label_singular = @Translation("feedback item"),
+ *   label_plural = @Translation("feedback items"),
+ *   label_count = @PluralTranslation(
+ *     singular = "@count feedback item",
+ *     plural = "@count feedback items",
+ *   ),
  *   handlers = {
- *     "view_builder" = "Drupal\Core\Entity\EntityViewBuilder",
- *     "list_builder" = "Drupal\tidy_feedback\FeedbackListBuilder",
- *     "views_data" = "Drupal\views\EntityViewsData",
  *     "access" = "Drupal\tidy_feedback\FeedbackAccessControlHandler",
+ *     "list_builder" = "Drupal\tidy_feedback\FeedbackListBuilder",
  *     "form" = {
- *       "default" = "Drupal\tidy_feedback\Form\FeedbackEditForm",
+ *       "default" = "Drupal\tidy_feedback\Form\FeedbackForm",
+ *       "add" = "Drupal\tidy_feedback\Form\FeedbackForm",
  *       "edit" = "Drupal\tidy_feedback\Form\FeedbackEditForm",
  *       "delete" = "Drupal\tidy_feedback\Form\FeedbackDeleteForm",
  *     },
+ *     "views_data" = "Drupal\views\EntityViewsData",
  *   },
  *   base_table = "tidy_feedback",
  *   admin_permission = "administer tidy feedback",

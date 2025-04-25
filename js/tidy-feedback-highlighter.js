@@ -4,7 +4,7 @@
  */
 (function (Drupal, drupalSettings, once) {
   "use strict";
-  
+
   // Get jQuery in a way that works in both Drupal 9+ and Drupal 11
   const $ = jQuery;
 
@@ -313,6 +313,9 @@
         data: JSON.stringify(formData),
         contentType: "application/json",
         dataType: "json",
+        beforeSend: function (xhr, settings) {
+          xhr.setRequestHeader('X-CSRF-Token', drupalSettings.token);
+        },
         success: function (response) {
           console.log("Submission successful:", response);
           // Close dialog properly using the stored reference

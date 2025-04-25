@@ -18,7 +18,7 @@ function tidy_feedback_schema(): array {
         'description' => 'Primary Key: Feedback submission ID.',
       ],
       'uuid' => [
-        'type' => 'varchar',
+        'type' => 'varchar_ascii',
         'length' => 128,
         'not null' => TRUE,
         'default' => '',

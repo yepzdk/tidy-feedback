@@ -17,8 +17,6 @@ function tidy_feedback_help(string $route_name, RouteMatchInterface $route_match
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
       $output .= '<p>' . t('The Tidy Feedback module provides an interactive way for testers to submit feedback about specific elements on your website.') . '</p>';
-      $output .= '<h3>' . t('Uses') . '</h3>';
-      $output .= '<p>' . t('Enable the feedback banner to allow users to highlight and provide feedback on specific page elements.') . '</p>';
       return $output;
   }
 }
@@ -32,7 +30,8 @@ function tidy_feedback_page_attachments(array &$attachments): void {
   // Only add for users with permission.
   if ($current_user->hasPermission('access tidy feedback')) {
     $attachments['#attached']['library'][] = 'tidy_feedback/tidy_feedback';
-
+    // Add the CSRF token to JS settings
+    $attachments['#attached']['drupalSettings']['token'] = \Drupal::csrfToken()->get();
     // Debug message to console
     $attachments['#attached']['drupalSettings']['tidyFeedback']['debug'] = 'Banner should be visible';
   }

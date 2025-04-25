@@ -13,5 +13,7 @@ tidy_feedback:
     - core/drupal
     - core/drupalSettings
     - core/once
-    - core/drupal.dialog.ajax
     - core/jquery
+    - core/drupal.dialog
+    - core/drupal.dialog.ajax
+
