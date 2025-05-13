@@ -17,6 +17,27 @@ tidy_feedback.submit:
   options:
     no_cache: TRUE
 
+tidy_feedback.test_form:
+  path: "/tidy-feedback/test-form"
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectController::testForm'
+    _title: "Test Feedback Form"
+  requirements:
+    _permission: "access tidy feedback"
+  options:
+    no_cache: TRUE
+
+tidy_feedback.test_submit:
+  path: "/tidy-feedback/test-submit"
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectController::testSubmit'
+    _title: "Test Submit Feedback"
+  requirements:
+    _permission: "access tidy feedback"
+  methods: [POST]
+  options:
+    no_cache: TRUE
+
 tidy_feedback.form:
   path: "/tidy-feedback/form"
   defaults:

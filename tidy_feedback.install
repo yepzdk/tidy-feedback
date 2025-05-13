@@ -156,7 +156,16 @@ function tidy_feedback_install(): void {
 
   // Create directory for file attachments
   $directory = 'public://tidy_feedback/attachments';
-  if (\Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS)) {
+  $file_system = \Drupal::service('file_system');
+  
+  // First ensure the parent directory exists
+  $parent_dir = 'public://tidy_feedback';
+  if (!$file_system->prepareDirectory($parent_dir, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS)) {
+    \Drupal::logger('tidy_feedback')->error('Failed to create parent directory at @path', ['@path' => $parent_dir]);
+  }
+  
+  // Then create the attachments directory
+  if ($file_system->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS)) {
     \Drupal::logger('tidy_feedback')->notice('Created attachments directory at @path', ['@path' => $directory]);
   }
   else {
@@ -216,6 +225,24 @@ function tidy_feedback_update_9001(): string {
   foreach ($spec as $name => $field) {
     $schema->addField('tidy_feedback', $name, $field);
   }
+  
+  // Create directory for file attachments
+  $directory = 'public://tidy_feedback/attachments';
+  $file_system = \Drupal::service('file_system');
+  
+  // First ensure the parent directory exists
+  $parent_dir = 'public://tidy_feedback';
+  if (!$file_system->prepareDirectory($parent_dir, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS)) {
+    \Drupal::logger('tidy_feedback')->error('Failed to create parent directory at @path', ['@path' => $parent_dir]);
+  }
+  
+  // Then create the attachments directory
+  if ($file_system->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS)) {
+    \Drupal::logger('tidy_feedback')->notice('Created attachments directory at @path', ['@path' => $directory]);
+  }
+  else {
+    \Drupal::logger('tidy_feedback')->error('Failed to create attachments directory at @path', ['@path' => $directory]);
+  }
 
-  return t('Added attachment field to feedback entities.');
+  return t('Added attachment field to feedback entities and created upload directories.');
 }

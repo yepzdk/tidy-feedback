@@ -295,7 +295,7 @@
       
       // Add file if selected
       if ($("#attachment")[0].files.length > 0) {
-        formData.append('attachment', $("#attachment")[0].files[0]);
+        formData.append('files[attachment]', $("#attachment")[0].files[0]);
       }
 
       // Get CSRF token and make the request
@@ -322,6 +322,7 @@
             showSuccessMessage();
           },
           error: function (xhr, status, error) {
+            console.error("Form submission error:", xhr.responseText);
             $("#tidy-feedback-form-wrapper").prepend(
               '<div class="messages messages--error">' +
                 Drupal.t("Error submitting feedback. Please try again.") +
