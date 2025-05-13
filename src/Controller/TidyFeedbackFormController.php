@@ -14,6 +14,8 @@ use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\file\Entity\File;
+use Drupal\Core\File\FileSystemInterface;
 
 /**
  * Controller for handling feedback form operations.
@@ -61,6 +63,13 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
    * @var \Drupal\Core\Session\AccountProxyInterface
    */
   protected $currentUser;
+  
+  /**
+   * The file system service.
+   *
+   * @var \Drupal\Core\File\FileSystemInterface
+   */
+  protected $fileSystem;
 
   /**
    * Constructor for TidyFeedbackFormController.
@@ -84,7 +93,8 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     TimeInterface $time,
     UuidInterface $uuid,
     LoggerChannelFactoryInterface $logger_factory,
-    AccountProxyInterface $current_user
+    AccountProxyInterface $current_user,
+    FileSystemInterface $file_system
   ) {
     $this->formBuilder = $form_builder;
     $this->database = $database;
@@ -92,6 +102,7 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     $this->uuid = $uuid;
     $this->loggerFactory = $logger_factory;
     $this->currentUser = $current_user;
+    $this->fileSystem = $file_system;
   }
 
   /**
@@ -104,7 +115,8 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
       $container->get('datetime.time'),
       $container->get('uuid'),
       $container->get('logger.factory'),
-      $container->get('current_user')
+      $container->get('current_user'),
+      $container->get('file_system')
     );
   }
 
@@ -156,13 +168,14 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
    */
   public function submitDirectFeedback(Request $request) {
     try {
-      // Check for JSON content type.
+      // Get data from the request
+      $data = $request->request->all();
+      $files = $request->files->all();
+      
+      // Check for JSON content type (for backward compatibility)
       $contentType = $request->headers->get("Content-Type");
-      if (strpos($contentType, "application/json") !== FALSE) {
+      if (strpos($contentType, "application/json") !== FALSE && empty($data)) {
         $data = json_decode($request->getContent(), TRUE);
-      }
-      else {
-        $data = $request->request->all();
       }
 
       $this->getLogger('tidy_feedback')->notice("Received data: @data", [
@@ -206,6 +219,31 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
       $severity = isset($data["severity"]) ? $data["severity"] : "normal";
       $elementSelector = isset($data["element_selector"]) ? $data["element_selector"] : "";
 
+      // Process file attachment if present
+      $attachment_fid = NULL;
+      if (!empty($files['attachment'])) {
+        $uploaded_file = $files['attachment'];
+        if ($uploaded_file->isValid()) {
+          // Prepare the destination directory
+          $directory = 'public://tidy_feedback/attachments';
+          $this->fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY);
+          
+          // Save the file
+          $file = File::create([
+            'uri' => $this->fileSystem->saveUploadedFile($uploaded_file, $directory),
+            'uid' => $this->currentUser->id(),
+            'status' => FILE_STATUS_PERMANENT,
+          ]);
+          $file->save();
+          
+          $attachment_fid = $file->id();
+          $this->getLogger('tidy_feedback')->notice(
+            "File uploaded successfully: @filename (FID: @fid)",
+            ["@filename" => $file->getFilename(), "@fid" => $attachment_fid]
+          );
+        }
+      }
+      
       // Insert into database.
       $id = $this->database
         ->insert("tidy_feedback")
@@ -222,8 +260,19 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
           "element_selector" => $elementSelector,
           "browser_info" => $browserInfo,
           "status" => "new",
+          "attachment__target_id" => $attachment_fid,
         ])
         ->execute();
+        
+      // If a file was attached, add file usage record
+      if ($attachment_fid) {
+        \Drupal::service('file.usage')->add(
+          File::load($attachment_fid),
+          'tidy_feedback',
+          'tidy_feedback',
+          $id
+        );
+      }
 
       $this->getLogger('tidy_feedback')->notice(
         "Feedback #@id submitted successfully via direct controller.",

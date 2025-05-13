@@ -214,7 +214,7 @@
     // Create a simple form without relying on Drupal's form API
     var simpleForm = `
       <div id="tidy-feedback-form-wrapper">
-        <form id="tidy-feedback-simple-form">
+        <form id="tidy-feedback-simple-form" enctype="multipart/form-data">
           <div class="form-item">
             <label for="issue_type">Issue Type</label>
             <select id="issue_type" name="issue_type" required>
@@ -236,6 +236,11 @@
           <div class="form-item">
             <label for="description">Description</label>
             <textarea id="description" name="description" rows="5" required></textarea>
+          </div>
+          <div class="form-item">
+            <label for="attachment">Attachment</label>
+            <input type="file" id="attachment" name="attachment" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv">
+            <div class="description">Upload a file to provide additional context (optional). Allowed extensions: jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx, txt, csv. Maximum size: 5MB.</div>
           </div>
           <input type="hidden" id="tidy-feedback-url" name="url" value="${window.location.href}">
           <input type="hidden" id="tidy-feedback-element-selector" name="element_selector" value="${elementSelector}">
@@ -279,15 +284,19 @@
     $("#tidy-feedback-simple-form").on("submit", function (e) {
       e.preventDefault();
 
-      // Collect form data
-      var formData = {
-        issue_type: $("#issue_type").val(),
-        severity: $("#severity").val(),
-        description: $("#description").val(),
-        url: $("#tidy-feedback-url").val(),
-        element_selector: $("#tidy-feedback-element-selector").val(),
-        browser_info: $("#tidy-feedback-browser-info").val(),
-      };
+      // Create FormData object for file upload
+      var formData = new FormData();
+      formData.append('issue_type', $("#issue_type").val());
+      formData.append('severity', $("#severity").val());
+      formData.append('description', $("#description").val());
+      formData.append('url', $("#tidy-feedback-url").val());
+      formData.append('element_selector', $("#tidy-feedback-element-selector").val());
+      formData.append('browser_info', $("#tidy-feedback-browser-info").val());
+      
+      // Add file if selected
+      if ($("#attachment")[0].files.length > 0) {
+        formData.append('attachment', $("#attachment")[0].files[0]);
+      }
 
       // Get CSRF token and make the request
       getCsrfToken(function(token) {
@@ -295,9 +304,9 @@
         $.ajax({
           url: Drupal.url("tidy-feedback/submit"),
           type: "POST",
-          data: JSON.stringify(formData),
-          contentType: "application/json",
-          dataType: "json",
+          data: formData,
+          processData: false,
+          contentType: false,
           headers: {
             'X-CSRF-Token': token
           },

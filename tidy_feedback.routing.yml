@@ -9,7 +9,7 @@ tidy_feedback.settings:
 tidy_feedback.submit:
   path: "/tidy-feedback/submit"
   defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackController::saveFeedback'
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackFormController::submitDirectFeedback'
     _title: "Submit Feedback"
   requirements:
     _permission: "access tidy feedback"
