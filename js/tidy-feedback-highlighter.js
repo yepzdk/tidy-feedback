@@ -211,9 +211,9 @@
 
   // Function to open feedback modal
   function openFeedbackModal(elementSelector) {
-    // Load the simpler form that's more reliable
+    // Load the improved form that handles all feedback data
     $.ajax({
-      url: Drupal.url('tidy-feedback/simple-test'),
+      url: Drupal.url('tidy-feedback/simple-test/' + encodeURIComponent(elementSelector)),
       dataType: 'html',
       type: 'GET',
       success: function(response) {
@@ -225,15 +225,13 @@
         // Set the form content 
         $("#tidy-feedback-modal").html(response);
 
-        // Update the element selector in a hidden field if it exists
-        if ($("#element_selector").length) {
-          $("#element_selector").val(elementSelector);
-        } else {
-          // Add a hidden field if it doesn't exist
-          $("#tidy-feedback-modal form").append(
-            '<input type="hidden" name="element_selector" value="' + elementSelector + '">'
-          );
+        // Update the element selector in the hidden field if it exists
+        if ($("#tidy-feedback-element-selector").length) {
+          $("#tidy-feedback-element-selector").val(elementSelector);
         }
+        
+        // Pre-fill browser info
+        setBrowserInfo();
 
         // Create dialog
         var dialogElement = document.getElementById("tidy-feedback-modal");
@@ -310,7 +308,9 @@
       });
       
       // Redirect to the feedback list after showing the message
-      window.location.href = '/admin/reports/tidy-feedback';
+      setTimeout(function() {
+        window.location.href = '/admin/reports/tidy-feedback';
+      }, 1000);
     }, 2000);
   }
 })(Drupal, drupalSettings, once);

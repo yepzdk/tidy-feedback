@@ -149,235 +149,38 @@ class TidyFeedbackTemplateController extends ControllerBase implements Container
   }
 
   /**
-   * Displays the template-based feedback form.
+   * Redirects to the simple form controller.
    *
    * @param string $element_selector
    *   The CSS selector of the element to provide feedback on.
    *
-   * @return \Symfony\Component\HttpFoundation\Response
-   *   The ajax response containing just the form.
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
+   *   A redirect to the simple form.
    */
   public function displayForm($element_selector = '') {
-    // Create form token for CSRF protection.
-    $form_token = \Drupal::csrfToken()->get('tidy_feedback_template_form');
-    
-    // Get current URL.
-    $current_url = \Drupal::request()->getUri();
-    
-    // Create empty browser info that will be filled by JavaScript.
-    $browser_info = '{}';
-    
-    // Set up attributes for the container.
-    $attributes = new Attribute();
-    
-    // Render the form using our template.
-    $build = [
-      '#theme' => 'tidy_feedback_form',
-      '#attributes' => $attributes,
-      '#form_token' => $form_token,
-      '#current_url' => $current_url,
-      '#element_selector' => $element_selector,
-      '#browser_info' => $browser_info,
-      '#attached' => [
-        'library' => ['tidy_feedback/tidy_feedback_template_form'],
-      ],
-    ];
-    
-    // Render just the form content without the full page.
-    $content = $this->renderer->renderRoot($build);
-    
-    // Create a response with just the form content.
-    $response = new \Symfony\Component\HttpFoundation\Response($content);
-    $response->headers->set('Content-Type', 'text/html');
-    
-    return $response;
+    // Redirect to the simple form controller for consistency
+    return new \Symfony\Component\HttpFoundation\RedirectResponse(
+      \Drupal::url('tidy_feedback.simple_test', ['element_selector' => $element_selector])
+    );
   }
 
   /**
-   * Handles form submissions from the template-based form.
+   * Redirects to the simple form submission handler.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The request object.
    *
-   * @return \Symfony\Component\HttpFoundation\JsonResponse
-   *   JSON response with submission status.
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse
+   *   A redirect to the simple form handler.
    */
   public function submitForm(Request $request) {
-    // Enable detailed error reporting for debugging
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
+    // Log the redirect for debugging
+    $this->getLogger('tidy_feedback')->notice(
+      "Redirecting template form submission to simple form handler"
+    );
     
-    try {
-      // Get form data and files.
-      $data = $request->request->all();
-      $files = $request->files->all();
-      
-      // Log what we received for debugging.
-      $this->getLogger('tidy_feedback')->notice("Template form data: @data", [
-        "@data" => print_r($data, TRUE),
-      ]);
-      $this->getLogger('tidy_feedback')->notice("Template form files: @files", [
-        "@files" => print_r($files, TRUE),
-      ]);
-      
-      // Log request method and content type
-      $this->getLogger('tidy_feedback')->notice("Request method: @method, Content-Type: @content_type", [
-        "@method" => $request->getMethod(),
-        "@content_type" => $request->headers->get('Content-Type'),
-      ]);
-      
-      // Skip CSRF validation temporarily for debugging
-      // Basic validation.
-      if (empty($data['description'])) {
-        throw new \Exception($this->t('Description is required'));
-      }
-      
-      // Process browser info - it might be a JSON string that needs decoding.
-      $browserInfo = isset($data["browser_info"]) ? $data["browser_info"] : "";
-      if (is_string($browserInfo) && !empty($browserInfo)) {
-        // Check if it's already a JSON string and store as is.
-        if (
-          substr($browserInfo, 0, 1) === "{" &&
-          json_decode($browserInfo) !== NULL
-        ) {
-          // It's already valid JSON, keep as is.
-        }
-        else {
-          // Convert to JSON if it's not already.
-          $browserInfo = json_encode(["raw_data" => $browserInfo]);
-        }
-      }
-      else {
-        // If empty or not a string, create an empty JSON object.
-        $browserInfo = "{}";
-      }
-      
-      // Get values with defaults.
-      $url = isset($data["url"]) ? $data["url"] : \Drupal::request()->getUri();
-      $issueType = isset($data["issue_type"]) ? $data["issue_type"] : "other";
-      $severity = isset($data["severity"]) ? $data["severity"] : "normal";
-      $elementSelector = isset($data["element_selector"]) ? $data["element_selector"] : "";
-      
-      // Handle file attachment.
-      $attachment_fid = NULL;
-      
-      if (!empty($files['files']['attachment'])) {
-        $uploaded_file = $files['files']['attachment'];
-        
-        try {
-          if ($uploaded_file->isValid()) {
-            // Prepare the directory.
-            $directory = 'public://tidy_feedback/attachments';
-            if (!$this->fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
-              throw new \Exception("Failed to create directory: $directory");
-            }
-            
-            // Get the filename and create a destination.
-            $filename = $uploaded_file->getClientOriginalName();
-            $destination = $directory . '/' . $filename;
-            
-            // Save the file with the file system service.
-            $file_uri = $this->fileSystem->saveUploadedFile(
-              $uploaded_file, 
-              $destination,
-              FileSystemInterface::EXISTS_RENAME
-            );
-            
-            if (!$file_uri) {
-              throw new \Exception("Failed to save uploaded file to $destination");
-            }
-            
-            // Create a permanent file entity.
-            $file = File::create([
-              'uri' => $file_uri,
-              'uid' => $this->currentUser->id(),
-              'status' => FILE_STATUS_PERMANENT,
-              'filename' => $this->fileSystem->basename($file_uri),
-            ]);
-            $file->save();
-            
-            $attachment_fid = $file->id();
-            
-            $this->getLogger('tidy_feedback')->notice(
-              "File uploaded successfully: @filename (FID: @fid)",
-              ["@filename" => $file->getFilename(), "@fid" => $attachment_fid]
-            );
-          } else {
-            throw new \Exception('File upload error: ' . $uploaded_file->getError());
-          }
-        } catch (\Exception $e) {
-          $this->getLogger('tidy_feedback')->error(
-            "Error uploading file: @error, Trace: @trace",
-            [
-              "@error" => $e->getMessage(),
-              "@trace" => $e->getTraceAsString()
-            ]
-          );
-          // Continue without the file.
-        }
-      }
-      
-      // Insert feedback into the database.
-      $id = $this->database->insert('tidy_feedback')
-        ->fields([
-          'uuid' => $this->uuid->generate(),
-          'uid' => $this->currentUser->id(),
-          'created' => $this->time->getRequestTime(),
-          'changed' => $this->time->getRequestTime(),
-          'issue_type' => $issueType,
-          'severity' => $severity,
-          'description__value' => $data['description'],
-          'description__format' => 'basic_html',
-          'url' => $url,
-          'element_selector' => $elementSelector,
-          'browser_info' => $browserInfo,
-          'status' => 'new',
-          'attachment__target_id' => $attachment_fid,
-        ])
-        ->execute();
-      
-      // Record file usage if a file was attached.
-      if ($attachment_fid) {
-        $this->fileUsage->add(
-          File::load($attachment_fid),
-          'tidy_feedback',
-          'tidy_feedback',
-          $id
-        );
-      }
-      
-      $this->getLogger('tidy_feedback')->notice(
-        "Feedback #@id submitted successfully via template form.",
-        ["@id" => $id]
-      );
-      
-      $this->getLogger('tidy_feedback')->notice(
-        "Successfully created feedback with ID: @id",
-        ["@id" => $id]
-      );
-      
-      // Return a standard HTML redirect response to avoid AJAX issues
-      return new \Symfony\Component\HttpFoundation\RedirectResponse('/admin/reports/tidy-feedback');
-      
-    } catch (\Exception $e) {
-      $this->getLogger('tidy_feedback')->error(
-        "Template form error: @error\nTrace: @trace",
-        [
-          "@error" => $e->getMessage(),
-          "@trace" => $e->getTraceAsString(),
-        ]
-      );
-      
-      // Display a detailed error message for debugging
-      return new \Symfony\Component\HttpFoundation\Response(
-        '<h1>Error submitting feedback</h1>' .
-        '<p>' . $e->getMessage() . '</p>' .
-        '<pre>' . $e->getTraceAsString() . '</pre>' .
-        '<p><a href="/admin/reports/tidy-feedback">Return to Feedback Reports</a></p>',
-        500,
-        ['Content-Type' => 'text/html']
-      );
-    }
+    // Redirect to the simple form controller for consistency
+    return $this->forward('Drupal\tidy_feedback\Controller\TidyFeedbackSimpleController::handleSubmit', [], $request->request->all());
   }
 
 }

@@ -13,7 +13,7 @@
 #}
 
 <div{{ attributes.addClass('tidy-feedback-form-container') }}>
-  <form id="tidy-feedback-form" class="tidy-feedback-form" enctype="multipart/form-data">
+  <form id="tidy-feedback-form" class="tidy-feedback-form" enctype="multipart/form-data" method="post" action="/tidy-feedback/simple-submit">
     <div class="form-item">
       <label for="issue_type">{{ 'Issue Type'|t }}</label>
       <select id="issue_type" name="issue_type" required>
@@ -49,7 +49,6 @@
     <input type="hidden" id="tidy-feedback-url" name="url" value="{{ current_url }}">
     <input type="hidden" id="tidy-feedback-element-selector" name="element_selector" value="{{ element_selector }}">
     <input type="hidden" id="tidy-feedback-browser-info" name="browser_info" value="{{ browser_info }}">
-    <input type="hidden" name="form_token" value="{{ form_token }}">
 
     <div class="form-actions">
       <button type="submit" id="tidy-feedback-submit" class="button button--primary">{{ 'Submit Feedback'|t }}</button>

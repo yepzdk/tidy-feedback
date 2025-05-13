@@ -61,10 +61,11 @@ tidy_feedback.template_submit:
     no_cache: TRUE
     
 tidy_feedback.simple_test:
-  path: "/tidy-feedback/simple-test"
+  path: "/tidy-feedback/simple-test/{element_selector}"
   defaults:
     _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackSimpleController::testForm'
-    _title: "Simple Test Form"
+    _title: "Submit Feedback"
+    element_selector: ''
   requirements:
     _permission: "access tidy feedback"
   options:
