@@ -258,6 +258,27 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
             ->setDisplayConfigurable("form", true)
             ->setDisplayConfigurable("view", true);
 
+        $fields["attachment"] = BaseFieldDefinition::create("file")
+            ->setLabel(t("Attachment"))
+            ->setDescription(t("Upload a file to provide additional context."))
+            ->setSettings([
+                "file_directory" => "tidy_feedback/attachments",
+                "file_extensions" => "jpg jpeg png gif pdf doc docx xls xlsx txt csv",
+                "max_filesize" => "5 MB",
+                "handler" => "default",
+            ])
+            ->setDisplayOptions("view", [
+                "label" => "above",
+                "type" => "file",
+                "weight" => 9,
+            ])
+            ->setDisplayOptions("form", [
+                "type" => "file",
+                "weight" => 9,
+            ])
+            ->setDisplayConfigurable("form", true)
+            ->setDisplayConfigurable("view", true);
+
         return $fields;
     }
 
@@ -544,6 +565,31 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
     public function setAdminComments($comments)
     {
         $this->set("admin_comments", $comments);
+        return $this;
+    }
+
+    /**
+     * Gets the attachment file.
+     *
+     * @return \Drupal\file\FileInterface|null
+     *   The file entity, or NULL if no attachment.
+     */
+    public function getAttachment()
+    {
+        return $this->get("attachment")->entity;
+    }
+
+    /**
+     * Sets the attachment file.
+     *
+     * @param int $fid
+     *   The file ID of the attachment.
+     *
+     * @return $this
+     */
+    public function setAttachment($fid)
+    {
+        $this->set("attachment", $fid);
         return $this;
     }
 }

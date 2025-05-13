@@ -106,6 +106,26 @@ function tidy_feedback_schema(): array {
         'not null' => FALSE,
         'description' => 'Text format for admin comments.',
       ],
+      'attachment__target_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'description' => 'The file ID of the attachment file.',
+      ],
+      'attachment__display' => [
+        'type' => 'int',
+        'size' => 'tiny',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => 1,
+        'description' => 'Flag to control whether this file should be displayed when viewing content.',
+      ],
+      'attachment__description' => [
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => 'Description of the attachment.',
+      ],
     ],
     'primary key' => ['id'],
     'indexes' => [
@@ -134,6 +154,15 @@ function tidy_feedback_install(): void {
     ]);
   }
 
+  // Create directory for file attachments
+  $directory = 'public://tidy_feedback/attachments';
+  if (\Drupal::service('file_system')->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS)) {
+    \Drupal::logger('tidy_feedback')->notice('Created attachments directory at @path', ['@path' => $directory]);
+  }
+  else {
+    \Drupal::logger('tidy_feedback')->error('Failed to create attachments directory at @path', ['@path' => $directory]);
+  }
+
   \Drupal::messenger()->addStatus(t('Tidy Feedback module has been installed. Configure permissions to allow users to submit feedback.'));
 }
 
@@ -154,4 +183,39 @@ function tidy_feedback_uninstall(): void {
   catch (\Exception $e) {
     \Drupal::logger('tidy_feedback')->error('Error dropping table during uninstall: @error', ['@error' => $e->getMessage()]);
   }
+}
+
+/**
+ * Add attachment field to feedback entities.
+ */
+function tidy_feedback_update_9001(): string {
+  $spec = [
+    'attachment__target_id' => [
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => FALSE,
+      'description' => 'The file ID of the attachment file.',
+    ],
+    'attachment__display' => [
+      'type' => 'int',
+      'size' => 'tiny',
+      'unsigned' => TRUE,
+      'not null' => FALSE,
+      'default' => 1,
+      'description' => 'Flag to control whether this file should be displayed when viewing content.',
+    ],
+    'attachment__description' => [
+      'type' => 'text',
+      'not null' => FALSE,
+      'size' => 'big',
+      'description' => 'Description of the attachment.',
+    ],
+  ];
+
+  $schema = \Drupal::database()->schema();
+  foreach ($spec as $name => $field) {
+    $schema->addField('tidy_feedback', $name, $field);
+  }
+
+  return t('Added attachment field to feedback entities.');
 }

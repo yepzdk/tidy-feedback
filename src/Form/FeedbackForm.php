@@ -8,11 +8,17 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\CloseModalDialogCommand;
 use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Ajax\InvokeCommand;
+use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Database\Connection;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\file\Entity\File;
+use Drupal\file\FileUsage\FileUsageInterface;
 
 /**
  * Provides a form for submitting feedback.
  */
-class FeedbackForm extends FormBase
+class FeedbackForm extends FormBase implements ContainerInjectionInterface
 {
     /**
      * {@inheritdoc}
@@ -37,19 +43,30 @@ class FeedbackForm extends FormBase
       protected $database;
 
       /**
+       * The file usage service.
+       *
+       * @var \Drupal\file\FileUsage\FileUsageInterface
+       */
+      protected $fileUsage;
+
+      /**
        * Constructs a FeedbackForm object.
        *
        * @param \Drupal\Core\Messenger\MessengerInterface $messenger
        *   The messenger service.
        * @param \Drupal\Core\Database\Connection $database
        *   The database connection.
+       * @param \Drupal\file\FileUsage\FileUsageInterface $file_usage
+       *   The file usage service.
        */
       public function __construct(
         MessengerInterface $messenger,
-        Connection $database
+        Connection $database,
+        FileUsageInterface $file_usage
       ) {
         $this->messenger = $messenger;
         $this->database = $database;
+        $this->fileUsage = $file_usage;
       }
 
       /**
@@ -58,7 +75,8 @@ class FeedbackForm extends FormBase
       public static function create(ContainerInterface $container) {
         return new static(
           $container->get('messenger'),
-          $container->get('database')
+          $container->get('database'),
+          $container->get('file.usage')
         );
       }
 
@@ -109,6 +127,20 @@ class FeedbackForm extends FormBase
             ),
             "#rows" => 5,
             "#required" => true,
+        ];
+
+        $form['attachment'] = [
+            '#type' => 'managed_file',
+            '#title' => $this->t('Attachment'),
+            '#description' => $this->t('Upload a file to provide additional context (optional). Allowed extensions: jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx, txt, csv. Maximum size: 5MB.'),
+            '#upload_location' => 'public://tidy_feedback/attachments',
+            '#upload_validators' => [
+                'file_validate_extensions' => ['jpg jpeg png gif pdf doc docx xls xlsx txt csv'],
+                'file_validate_size' => [5 * 1024 * 1024], // 5MB
+            ],
+            '#theme' => 'image_widget',
+            '#preview_image_style' => 'medium',
+            '#required' => FALSE,
         ];
 
         // Hidden fields to store element information
@@ -211,6 +243,19 @@ class FeedbackForm extends FormBase
             // Get values
             $values = $form_state->getValues();
 
+            // Handle file upload
+            $attachment_fid = NULL;
+            if (!empty($values['attachment'][0])) {
+                $fid = $values['attachment'][0];
+                $file = File::load($fid);
+                if ($file) {
+                    // Set file to permanent
+                    $file->setPermanent();
+                    $file->save();
+                    $attachment_fid = $file->id();
+                }
+            }
+
             // Create a record in the database
             $connection = \Drupal::database();
             $id = $connection
@@ -228,8 +273,14 @@ class FeedbackForm extends FormBase
                     "element_selector" => $values["element_selector"],
                     "browser_info" => $values["browser_info"],
                     "status" => "new",
+                    "attachment__target_id" => $attachment_fid,
                 ])
                 ->execute();
+                
+            // Add file usage record if a file was attached
+            if (!empty($attachment_fid) && isset($file)) {
+                $this->fileUsage->add($file, 'tidy_feedback', 'tidy_feedback', $id);
+            }
 
             // Log success but don't show messenger message (we'll show via JS)
             \Drupal::logger("tidy_feedback")->notice(

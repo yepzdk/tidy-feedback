@@ -5,6 +5,7 @@ namespace Drupal\tidy_feedback\Form;
 use Drupal\Core\Entity\ContentEntityDeleteForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\file\Entity\File;
 
 /**
  * Provides a form for deleting Feedback entities.
@@ -44,6 +45,14 @@ class FeedbackDeleteForm extends ContentEntityDeleteForm
     {
         /** @var \Drupal\tidy_feedback\Entity\Feedback $entity */
         $entity = $this->getEntity();
+        
+        // Clean up file attachments
+        $attachment = $entity->getAttachment();
+        if ($attachment) {
+            // Decrease file usage count
+            \Drupal::service('file.usage')->delete($attachment, 'tidy_feedback', 'tidy_feedback', $entity->id());
+        }
+        
         $entity->delete();
 
         $this->messenger()->addStatus($this->getDeletionMessage());
