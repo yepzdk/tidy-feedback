@@ -121,10 +121,17 @@ class TidyFeedbackSimpleController extends ControllerBase {
   public function testForm($element_selector = '') {
     // Get current URL
     $current_url = \Drupal::request()->getUri();
+    
+    // Log that this controller is being called
+    $this->getLogger('tidy_feedback')->notice(
+      "Simple test form controller called with element_selector: @selector",
+      ["@selector" => $element_selector]
+    );
   
     $output = '
     <div class="tidy-feedback-simple-test">
       <h2>Submit Feedback</h2>
+      <div style="color: green; margin-bottom: 10px;">Element selected: ' . htmlspecialchars($element_selector) . '</div>
       <form method="post" action="/tidy-feedback/simple-submit" enctype="multipart/form-data">
         <div class="form-item">
           <label for="issue_type">Issue Type</label>

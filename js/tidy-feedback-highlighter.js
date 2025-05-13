@@ -211,74 +211,133 @@
 
   // Function to open feedback modal
   function openFeedbackModal(elementSelector) {
-    // Load the improved form that handles all feedback data
-    $.ajax({
-      url: Drupal.url('tidy-feedback/simple-test/' + encodeURIComponent(elementSelector)),
-      dataType: 'html',
-      type: 'GET',
-      success: function(response) {
-        // Create modal container if needed
-        if (!$("#tidy-feedback-modal").length) {
-          $("body").append('<div id="tidy-feedback-modal" class="tidy-feedback-ui"></div>');
-        }
-        
-        // Set the form content 
-        $("#tidy-feedback-modal").html(response);
-
-        // Update the element selector in the hidden field if it exists
-        if ($("#tidy-feedback-element-selector").length) {
-          $("#tidy-feedback-element-selector").val(elementSelector);
-        }
-        
-        // Pre-fill browser info
-        setBrowserInfo();
-
-        // Create dialog
-        var dialogElement = document.getElementById("tidy-feedback-modal");
-        var dialogObj = Drupal.dialog(dialogElement, {
-          title: Drupal.t("Submit Feedback"),
-          width: "500px",
-          dialogClass: "tidy-feedback-ui",
-        });
-
-        // Store dialog object as a jQuery data attribute for easy access
-        $(dialogElement).data("drupalDialog", dialogObj);
-
-        // Show the dialog
-        dialogObj.showModal();
-        
-        // Add a submit handler to the form
-        $("#tidy-feedback-modal form").on("submit", function(e) {
-          e.preventDefault();
+    console.log("Opening feedback modal for element:", elementSelector);
+    
+    // Create a simple form with the element selector
+    var formHtml = `
+      <div class="tidy-feedback-form-container">
+        <form id="tidy-feedback-form" action="/tidy-feedback/simple-submit" method="post" enctype="multipart/form-data">
+          <div class="form-item">
+            <label for="issue_type">Issue Type</label>
+            <select id="issue_type" name="issue_type" required>
+              <option value="bug">Bug</option>
+              <option value="enhancement">Enhancement</option>
+              <option value="question">Question</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
           
-          var formData = new FormData(this);
+          <div class="form-item">
+            <label for="severity">Severity</label>
+            <select id="severity" name="severity" required>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="normal" selected>Normal</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
           
-          $.ajax({
-            url: $(this).attr('action'),
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-              // Close the dialog
-              dialogObj.close();
-              
-              // Show success message
-              showSuccessMessage();
-            },
-            error: function(xhr, status, error) {
-              console.error("Error submitting form:", error);
-            }
-          });
-        });
-      },
-      error: function(xhr, status, error) {
-        console.error("Error loading feedback form:", error);
-      }
+          <div class="form-item">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="5" required></textarea>
+          </div>
+          
+          <div class="form-item">
+            <label for="attachment">Attachment</label>
+            <input type="file" id="attachment" name="files[attachment]" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv">
+            <div class="description">Upload a file to provide additional context (optional).</div>
+          </div>
+          
+          <input type="hidden" id="tidy-feedback-url" name="url" value="${window.location.href}">
+          <input type="hidden" id="tidy-feedback-element-selector" name="element_selector" value="${elementSelector}">
+          <input type="hidden" id="tidy-feedback-browser-info" name="browser_info" value="">
+          
+          <div class="form-actions">
+            <button type="submit" id="tidy-feedback-submit" class="button button--primary">Submit Feedback</button>
+            <button type="button" id="tidy-feedback-cancel" class="button">Cancel</button>
+          </div>
+        </form>
+      </div>
+    `;
+    
+    // Create modal container if needed
+    if (!$("#tidy-feedback-modal").length) {
+      $("body").append('<div id="tidy-feedback-modal" class="tidy-feedback-ui"></div>');
+    }
+    
+    // Set the form content 
+    $("#tidy-feedback-modal").html(formHtml);
+    
+    // Pre-fill browser info
+    setBrowserInfoField();
+    
+    // Create dialog
+    var dialogElement = document.getElementById("tidy-feedback-modal");
+    var dialogObj = Drupal.dialog(dialogElement, {
+      title: Drupal.t("Submit Feedback"),
+      width: "500px",
+      dialogClass: "tidy-feedback-ui",
+    });
+    
+    // Store dialog object as a jQuery data attribute for easy access
+    $(dialogElement).data("drupalDialog", dialogObj);
+    
+    // Show the dialog
+    dialogObj.showModal();
+    
+    // Add submit handler
+    $("#tidy-feedback-form").on("submit", function(e) {
+      e.preventDefault();
+      
+      var formData = new FormData(this);
+      
+      // Submit the form via AJAX
+      $.ajax({
+        url: $(this).attr('action'),
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+          // Close the dialog
+          dialogObj.close();
+          
+          // Show success message
+          showSuccessMessage();
+        },
+        error: function(xhr, status, error) {
+          console.error("Error submitting form:", error);
+          alert("Error submitting feedback. Please try again.");
+        }
+      });
+    });
+    
+    // Add cancel button handler
+    $("#tidy-feedback-cancel").on("click", function() {
+      dialogObj.close();
     });
     
     // Deactivate feedback mode
     toggleFeedbackMode();
+  }
+
+  /**
+   * Sets browser information in the hidden input field.
+   */
+  function setBrowserInfoField() {
+    var browserInfo = {
+      userAgent: navigator.userAgent,
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio || 1,
+      platform: navigator.platform,
+      language: navigator.language,
+    };
+
+    // Set the value as a properly formatted JSON string
+    $("#tidy-feedback-browser-info").val(JSON.stringify(browserInfo));
   }
 
   /**

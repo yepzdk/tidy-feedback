@@ -70,6 +70,27 @@ tidy_feedback.simple_test:
     _permission: "access tidy feedback"
   options:
     no_cache: TRUE
+    
+tidy_feedback.direct_test:
+  path: "/tidy-feedback/direct-test"
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectTestController::directTestForm'
+    _title: "Direct Test Form"
+  requirements:
+    _permission: "access tidy feedback"
+  options:
+    no_cache: TRUE
+    
+tidy_feedback.direct_test_submit:
+  path: "/tidy-feedback/direct-test-submit"
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectTestController::handleDirectTestSubmit'
+    _title: "Direct Test Submit"
+  requirements:
+    _permission: "access tidy feedback"
+  methods: [POST]
+  options:
+    no_cache: TRUE
 
 tidy_feedback.simple_submit:
   path: "/tidy-feedback/simple-submit"
