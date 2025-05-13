@@ -211,9 +211,9 @@
 
   // Function to open feedback modal
   function openFeedbackModal(elementSelector) {
-    // Load the template-based form via AJAX
+    // Load the simpler form that's more reliable
     $.ajax({
-      url: Drupal.url('tidy-feedback/template-form/' + encodeURIComponent(elementSelector)),
+      url: Drupal.url('tidy-feedback/simple-test'),
       dataType: 'html',
       type: 'GET',
       success: function(response) {
@@ -224,6 +224,16 @@
         
         // Set the form content 
         $("#tidy-feedback-modal").html(response);
+
+        // Update the element selector in a hidden field if it exists
+        if ($("#element_selector").length) {
+          $("#element_selector").val(elementSelector);
+        } else {
+          // Add a hidden field if it doesn't exist
+          $("#tidy-feedback-modal form").append(
+            '<input type="hidden" name="element_selector" value="' + elementSelector + '">'
+          );
+        }
 
         // Create dialog
         var dialogElement = document.getElementById("tidy-feedback-modal");
@@ -239,7 +249,30 @@
         // Show the dialog
         dialogObj.showModal();
         
-        // The form handlers are now handled by the tidy-feedback-template-form.js
+        // Add a submit handler to the form
+        $("#tidy-feedback-modal form").on("submit", function(e) {
+          e.preventDefault();
+          
+          var formData = new FormData(this);
+          
+          $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+              // Close the dialog
+              dialogObj.close();
+              
+              // Show success message
+              showSuccessMessage();
+            },
+            error: function(xhr, status, error) {
+              console.error("Error submitting form:", error);
+            }
+          });
+        });
       },
       error: function(xhr, status, error) {
         console.error("Error loading feedback form:", error);
@@ -275,6 +308,9 @@
       message.fadeOut(400, function () {
         $(this).remove();
       });
-    }, 3000);
+      
+      // Redirect to the feedback list after showing the message
+      window.location.href = '/admin/reports/tidy-feedback';
+    }, 2000);
   }
 })(Drupal, drupalSettings, once);

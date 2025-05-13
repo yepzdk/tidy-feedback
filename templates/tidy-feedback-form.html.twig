@@ -13,7 +13,7 @@
 #}
 
 <div{{ attributes.addClass('tidy-feedback-form-container') }}>
-  <form id="tidy-feedback-form" class="tidy-feedback-form" enctype="multipart/form-data" method="post" action="{{ path('tidy_feedback.template_submit') }}">
+  <form id="tidy-feedback-form" class="tidy-feedback-form" enctype="multipart/form-data">
     <div class="form-item">
       <label for="issue_type">{{ 'Issue Type'|t }}</label>
       <select id="issue_type" name="issue_type" required>

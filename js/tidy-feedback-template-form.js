@@ -2,7 +2,7 @@
  * @file
  * JavaScript for the templated feedback form.
  */
-(function (Drupal) {
+(function (Drupal, once) {
   "use strict";
 
   // Get jQuery in a way that works in both Drupal 9+ and Drupal 11
@@ -11,8 +11,7 @@
   Drupal.behaviors.tidyFeedbackTemplateForm = {
     attach: function (context, settings) {
       // Only run once for the form
-      $(once('tidy-feedback-template-form', '#tidy-feedback-form', context)).each(function() {
-        const form = this;
+      once('tidy-feedback-template-form', '#tidy-feedback-form', context).forEach(function(form) {
         
         // Pre-fill browser info when form loads
         setBrowserInfo();
@@ -31,11 +30,12 @@
           getCsrfToken(function(token) {
             // Add CSRF token to headers
             $.ajax({
-              url: Drupal.url("tidy-feedback/template-submit"),
+              url: Drupal.url("tidy-feedback/simple-submit"),
               type: "POST",
               data: formData,
               processData: false,
               contentType: false,
+              cache: false,
               headers: {
                 'X-CSRF-Token': token
               },
@@ -47,27 +47,28 @@
                 const dialogObj = $(form).closest('.ui-dialog-content').data("drupalDialog");
                 if (dialogObj && typeof dialogObj.close === "function") {
                   dialogObj.close();
-                  // Show success message after dialog closes
-                  showSuccessMessage();
-                } else {
-                  // Show success message in place
-                  $('#tidy-feedback-result').html(
-                    '<div class="messages messages--status">' +
-                    Drupal.t("Thank you for your feedback. It has been submitted successfully.") +
-                    '</div>'
-                  );
                 }
+                
+                // Show success message in place or in a toast
+                $('#tidy-feedback-result').html(
+                  '<div class="messages messages--status">' +
+                  Drupal.t("Thank you for your feedback. It has been submitted successfully.") +
+                  '</div>'
+                );
                 
                 // Reset submit button
                 $('#tidy-feedback-submit').prop('disabled', false).text(Drupal.t('Submit Feedback'));
                 
-                // Always show toast message regardless of dialog context
-                if (response.show_message) {
-                  showSuccessMessage();
-                }
+                // Always show toast message
+                showSuccessMessage();
+                
+                // Redirect to the feedback list after a short delay
+                setTimeout(function() {
+                  window.location.href = '/admin/reports/tidy-feedback';
+                }, 2000);
               },
               error: function (xhr, status, error) {
-                console.error("Form submission error:", xhr.responseText);
+                console.error("Form submission error:", xhr.status, xhr.statusText, xhr.responseText);
                 
                 // Show error message
                 $('#tidy-feedback-result').html(
@@ -149,6 +150,19 @@
     const message = $('<div class="tidy-feedback-success-message"></div>')
       .text(Drupal.t("Feedback submitted successfully"))
       .appendTo("body");
+      
+    // Add styles to make the message more visible
+    message.css({
+      'position': 'fixed',
+      'top': '20px',
+      'right': '20px',
+      'background-color': '#4CAF50',
+      'color': 'white',
+      'padding': '15px 20px',
+      'border-radius': '4px',
+      'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
+      'z-index': '9999'
+    });
 
     setTimeout(function () {
       message.fadeOut(400, function () {
@@ -157,4 +171,4 @@
     }, 3000);
   }
 
-})(Drupal);
+})(Drupal, once);
