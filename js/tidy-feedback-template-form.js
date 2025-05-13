@@ -31,7 +31,7 @@
           getCsrfToken(function(token) {
             // Add CSRF token to headers
             $.ajax({
-              url: Drupal.url("tidy-feedback/submit"),
+              url: Drupal.url("tidy-feedback/template-submit"),
               type: "POST",
               data: formData,
               processData: false,
@@ -60,6 +60,11 @@
                 
                 // Reset submit button
                 $('#tidy-feedback-submit').prop('disabled', false).text(Drupal.t('Submit Feedback'));
+                
+                // Always show toast message regardless of dialog context
+                if (response.show_message) {
+                  showSuccessMessage();
+                }
               },
               error: function (xhr, status, error) {
                 console.error("Form submission error:", xhr.responseText);

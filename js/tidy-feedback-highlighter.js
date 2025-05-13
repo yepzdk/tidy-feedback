@@ -214,6 +214,7 @@
     // Load the template-based form via AJAX
     $.ajax({
       url: Drupal.url('tidy-feedback/template-form/' + encodeURIComponent(elementSelector)),
+      dataType: 'html',
       type: 'GET',
       success: function(response) {
         // Create modal container if needed
@@ -256,6 +257,19 @@
     const message = $('<div class="tidy-feedback-success-message"></div>')
       .text(Drupal.t("Feedback submitted successfully"))
       .appendTo("body");
+
+    // Add styles to make the message more visible
+    message.css({
+      'position': 'fixed',
+      'top': '20px',
+      'right': '20px',
+      'background-color': '#4CAF50',
+      'color': 'white',
+      'padding': '15px 20px',
+      'border-radius': '4px',
+      'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
+      'z-index': '9999'
+    });
 
     setTimeout(function () {
       message.fadeOut(400, function () {

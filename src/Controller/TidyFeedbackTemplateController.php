@@ -154,8 +154,8 @@ class TidyFeedbackTemplateController extends ControllerBase implements Container
    * @param string $element_selector
    *   The CSS selector of the element to provide feedback on.
    *
-   * @return array
-   *   The render array for the form page.
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   The ajax response containing just the form.
    */
   public function displayForm($element_selector = '') {
     // Create form token for CSRF protection.
@@ -170,15 +170,6 @@ class TidyFeedbackTemplateController extends ControllerBase implements Container
     // Set up attributes for the container.
     $attributes = new Attribute();
     
-    // Set up the template variables.
-    $variables = [
-      'attributes' => $attributes,
-      'form_token' => $form_token,
-      'current_url' => $current_url,
-      'element_selector' => $element_selector,
-      'browser_info' => $browser_info,
-    ];
-    
     // Render the form using our template.
     $build = [
       '#theme' => 'tidy_feedback_form',
@@ -192,7 +183,14 @@ class TidyFeedbackTemplateController extends ControllerBase implements Container
       ],
     ];
     
-    return $build;
+    // Render just the form content without the full page.
+    $content = $this->renderer->renderRoot($build);
+    
+    // Create a response with just the form content.
+    $response = new \Symfony\Component\HttpFoundation\Response($content);
+    $response->headers->set('Content-Type', 'text/html');
+    
+    return $response;
   }
 
   /**
@@ -218,8 +216,8 @@ class TidyFeedbackTemplateController extends ControllerBase implements Container
         "@files" => print_r($files, TRUE),
       ]);
       
-      // Validate CSRF token.
-      if (!isset($data['form_token']) || 
+      // Validate CSRF token if provided.
+      if (isset($data['form_token']) && 
           !\Drupal::csrfToken()->validate($data['form_token'], 'tidy_feedback_template_form')) {
         throw new \Exception('Invalid security token');
       }
@@ -349,6 +347,7 @@ class TidyFeedbackTemplateController extends ControllerBase implements Container
         'status' => 'success',
         'message' => $this->t('Feedback submitted successfully'),
         'id' => $id,
+        'show_message' => true,
       ]);
       
     } catch (\Exception $e) {

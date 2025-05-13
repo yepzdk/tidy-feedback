@@ -11,3 +11,4 @@ tidy_feedback.admin:
   parent: system.admin_reports
   route_name: entity.tidy_feedback.collection
   weight: 0
+  menu_name: admin
