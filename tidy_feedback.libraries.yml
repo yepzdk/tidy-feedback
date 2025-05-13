@@ -17,3 +17,17 @@ tidy_feedback:
     - core/drupal.dialog
     - core/drupal.dialog.ajax
 
+tidy_feedback_template_form:
+  version: 1.x
+  css:
+    theme:
+      css/tidy-feedback-form.css: {}
+  js:
+    js/tidy-feedback-template-form.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupalSettings
+    - core/once
+    - core/jquery
+    - core/drupal.dialog
+

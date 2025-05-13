@@ -316,6 +316,7 @@ class TidyFeedbackDirectController extends ControllerBase implements ContainerIn
         '#type' => 'html_tag',
         '#tag' => 'script',
         '#value' => "
+//<![CDATA[
           document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('tidy-feedback-test-form').addEventListener('submit', function(e) {
               e.preventDefault();
@@ -327,20 +328,21 @@ class TidyFeedbackDirectController extends ControllerBase implements ContainerIn
                 body: formData,
                 credentials: 'same-origin'
               })
-              .then(response => response.json())
-              .then(data => {
+              .then(function(response) { return response.json(); })
+              .then(function(data) {
                 document.getElementById('test-result').innerHTML = 
                   '<div class=\"messages messages--' + (data.status === 'success' ? 'status' : 'error') + '\">' + 
                   data.message + 
                   (data.details ? '<pre>' + data.details + '</pre>' : '') +
                   '</div>';
               })
-              .catch(error => {
+              .catch(function(error) {
                 document.getElementById('test-result').innerHTML = 
                   '<div class=\"messages messages--error\">Error: ' + error.message + '</div>';
               });
             });
           });
+//]]>
         ",
       ],
     ];

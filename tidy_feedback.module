@@ -48,3 +48,21 @@ function tidy_feedback_form_alter(&$form, FormStateInterface $form_state, $form_
     $form['#attached']['library'][] = 'tidy_feedback/tidy_feedback_form';
   }
 }
+
+/**
+ * Implements hook_theme().
+ */
+function tidy_feedback_theme() {
+  return [
+    'tidy_feedback_form' => [
+      'template' => 'tidy-feedback-form',
+      'variables' => [
+        'attributes' => [],
+        'form_token' => '',
+        'current_url' => '',
+        'element_selector' => '',
+        'browser_info' => '{}',
+      ],
+    ],
+  ];
+}

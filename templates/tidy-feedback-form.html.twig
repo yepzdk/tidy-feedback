@@ -1,0 +1,61 @@
+{# 
+/**
+ * @file
+ * Twig template for tidy feedback form.
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the form.
+ * - form_token: CSRF token for form security.
+ * - current_url: The current page URL.
+ * - element_selector: The CSS selector of the selected element (if any).
+ * - browser_info: JSON string with browser information.
+ */
+#}
+
+<div{{ attributes.addClass('tidy-feedback-form-container') }}>
+  <form id="tidy-feedback-form" class="tidy-feedback-form" enctype="multipart/form-data" method="post">
+    <div class="form-item">
+      <label for="issue_type">{{ 'Issue Type'|t }}</label>
+      <select id="issue_type" name="issue_type" required>
+        <option value="bug">{{ 'Bug'|t }}</option>
+        <option value="enhancement">{{ 'Enhancement'|t }}</option>
+        <option value="question">{{ 'Question'|t }}</option>
+        <option value="other">{{ 'Other'|t }}</option>
+      </select>
+    </div>
+
+    <div class="form-item">
+      <label for="severity">{{ 'Severity'|t }}</label>
+      <select id="severity" name="severity" required>
+        <option value="critical">{{ 'Critical'|t }}</option>
+        <option value="high">{{ 'High'|t }}</option>
+        <option value="normal" selected>{{ 'Normal'|t }}</option>
+        <option value="low">{{ 'Low'|t }}</option>
+      </select>
+    </div>
+
+    <div class="form-item">
+      <label for="description">{{ 'Description'|t }}</label>
+      <textarea id="description" name="description" rows="5" required></textarea>
+      <div class="description">{{ 'Please describe the issue or suggestion in detail.'|t }}</div>
+    </div>
+
+    <div class="form-item">
+      <label for="attachment">{{ 'Attachment'|t }}</label>
+      <input type="file" id="attachment" name="files[attachment]" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv">
+      <div class="description">{{ 'Upload a file to provide additional context (optional). Allowed extensions: jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx, txt, csv. Maximum size: 5MB.'|t }}</div>
+    </div>
+
+    <input type="hidden" id="tidy-feedback-url" name="url" value="{{ current_url }}">
+    <input type="hidden" id="tidy-feedback-element-selector" name="element_selector" value="{{ element_selector }}">
+    <input type="hidden" id="tidy-feedback-browser-info" name="browser_info" value="{{ browser_info }}">
+    <input type="hidden" name="form_token" value="{{ form_token }}">
+
+    <div class="form-actions">
+      <button type="submit" id="tidy-feedback-submit" class="button button--primary">{{ 'Submit Feedback'|t }}</button>
+      <button type="button" id="tidy-feedback-cancel" class="button">{{ 'Cancel'|t }}</button>
+    </div>
+  </form>
+  
+  <div id="tidy-feedback-result"></div>
+</div>
