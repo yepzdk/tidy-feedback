@@ -214,7 +214,7 @@
     // Create a simple form without relying on Drupal's form API
     var simpleForm = `
       <div id="tidy-feedback-form-wrapper">
-        <form id="tidy-feedback-simple-form">
+        <form id="tidy-feedback-simple-form" enctype="multipart/form-data">
           <div class="form-item">
             <label for="issue_type">Issue Type</label>
             <select id="issue_type" name="issue_type" required>
@@ -234,12 +234,18 @@
             </select>
           </div>
           <div class="form-item">
-            <label for="description">Description</label>
-            <textarea id="description" name="description" rows="5" required></textarea>
-          </div>
-          <input type="hidden" id="tidy-feedback-url" name="url" value="${window.location.href}">
-          <input type="hidden" id="tidy-feedback-element-selector" name="element_selector" value="${elementSelector}">
-          <input type="hidden" id="tidy-feedback-browser-info" name="browser_info" value="">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="5" required></textarea>
+              </div>
+              <div class="form-item">
+                <label for="file_attachment">Attachment</label>
+                <input type="file" id="file_attachment" name="file_attachment" accept="image/*,.pdf,.doc,.docx,.txt">
+                <div class="form-item-description">Upload a screenshot or document related to this feedback (optional). Maximum size: 2MB.</div>
+              </div>
+              <input type="hidden" id="tidy-feedback-url" name="url" value="${window.location.href}">
+              <input type="hidden" id="tidy-feedback-element-selector" name="element_selector" value="${elementSelector}">
+              <input type="hidden" id="tidy-feedback-browser-info" name="browser_info" value="">
+              <input type="hidden" name="form_token" id="form-token" value="">
           <div class="form-actions">
             <button type="submit" class="button button--primary">Submit Feedback</button>
             <button type="button" id="feedback-cancel" class="button">Cancel</button>
@@ -260,6 +266,11 @@
 
     // Set proper browser info after the form is created
     setBrowserInfo();
+    
+    // Add file validation
+    $("#file_attachment").on("change", function() {
+      validateFileUpload(this);
+    });
 
     // Create dialog
     var dialogElement = document.getElementById("tidy-feedback-modal");
@@ -275,50 +286,102 @@
     // Show the dialog
     dialogObj.showModal();
 
+    // Get CSRF token and set it in the form
+    getCsrfToken(function(token) {
+      $("#form-token").val(token);
+    });
+    
     // Handle form submission
     $("#tidy-feedback-simple-form").on("submit", function (e) {
       e.preventDefault();
-
-      // Collect form data
-      var formData = {
-        issue_type: $("#issue_type").val(),
-        severity: $("#severity").val(),
-        description: $("#description").val(),
-        url: $("#tidy-feedback-url").val(),
-        element_selector: $("#tidy-feedback-element-selector").val(),
-        browser_info: $("#tidy-feedback-browser-info").val(),
-      };
-
-      // Get CSRF token and make the request
+      
+      // Clear any existing error messages
+      $("#tidy-feedback-form-wrapper .messages--error").remove();
+      
+      // Validate the file first
+      if ($('#file_attachment')[0].files.length > 0) {
+        if (!validateFileUpload($('#file_attachment')[0])) {
+          return false;
+        }
+      }
+      
+      // Check for required fields
+      if (!$("#description").val()) {
+        $("#tidy-feedback-form-wrapper").prepend(
+          '<div class="messages messages--error">' + 
+          Drupal.t('Description is required.') + 
+          '</div>'
+        );
+        return false;
+      }
+      
+      // Set browser info before submitting
+      $("#tidy-feedback-browser-info").val(getBrowserInfo());
+      
+      // Show loading message
+      $("#tidy-feedback-form-wrapper .messages--status").remove();
+      $("#tidy-feedback-form-wrapper").prepend(
+        '<div class="messages messages--status" id="tidy-feedback-loading">' + 
+        Drupal.t('Submitting feedback...') + 
+        '</div>'
+      );
+      
+      // Create FormData object from the form
+      var formData = new FormData(this);
+      
+      // Log form data for debugging
+      debugFormData(formData);
+      
+      // Get CSRF token and submit via AJAX
       getCsrfToken(function(token) {
-        // Manual AJAX submission
         $.ajax({
           url: Drupal.url("tidy-feedback/submit"),
           type: "POST",
-          data: JSON.stringify(formData),
-          contentType: "application/json",
-          dataType: "json",
+          data: formData,
+          processData: false,
+          contentType: false,
           headers: {
             'X-CSRF-Token': token
           },
-          success: function (response) {
-            // Close dialog properly using the stored reference
+          success: function(response) {
+            console.log("Feedback submitted successfully:", response);
+            
+            // Remove loading message
+            $("#tidy-feedback-loading").remove();
+            
+            // Close the dialog
             var dialogObj = $("#tidy-feedback-modal").data("drupalDialog");
             if (dialogObj && typeof dialogObj.close === "function") {
               dialogObj.close();
             } else {
-              // Fallback method if dialog object isn't available
+              // Fallback method
               $(".ui-dialog-titlebar-close").click();
             }
+            
+            // Show success message
             showSuccessMessage();
           },
-          error: function (xhr, status, error) {
+          error: function(xhr, status, error) {
+            console.error("Error submitting feedback:", {
+              status: status,
+              error: error,
+              response: xhr.responseText,
+              statusCode: xhr.status
+            });
+            
+            // Remove loading message
+            $("#tidy-feedback-loading").remove();
+            
+            // Show error message
+            var errorMessage = Drupal.t("Error submitting feedback. Please try again.");
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+              errorMessage = xhr.responseJSON.message;
+            }
+            
             $("#tidy-feedback-form-wrapper").prepend(
-              '<div class="messages messages--error">' +
-                Drupal.t("Error submitting feedback. Please try again.") +
-                "</div>",
+              '<div class="messages messages--error">' + errorMessage + '</div>'
             );
-          },
+          }
         });
       });
     });
@@ -354,6 +417,8 @@
         dataType: 'text',
         success: function(token) {
           callback(token);
+          // Store token in a data attribute for future use
+          $('body').attr('data-csrf-token', token);
         },
         error: function(xhr, status, error) {
           console.error('Error getting CSRF token:', error);
@@ -364,6 +429,12 @@
 
   // Function to set browser information
   function setBrowserInfo() {
+    // Set the value as a properly formatted JSON string
+    $("#tidy-feedback-browser-info").val(getBrowserInfo());
+  }
+  
+  // Function to get browser information as a JSON string
+  function getBrowserInfo() {
     var browserInfo = {
       userAgent: navigator.userAgent,
       screenWidth: window.screen.width,
@@ -373,10 +444,49 @@
       devicePixelRatio: window.devicePixelRatio || 1,
       platform: navigator.platform,
       language: navigator.language,
+      timestamp: new Date().toISOString()
     };
 
-    // Set the value as a properly formatted JSON string
-    $("#tidy-feedback-browser-info").val(JSON.stringify(browserInfo));
+    return JSON.stringify(browserInfo);
+  }
+
+  // Function to validate file uploads
+  function validateFileUpload(fileInput) {
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    const file = fileInput.files[0];
+    
+    // Clear previous error messages
+    $(fileInput).next('.file-upload-error').remove();
+    
+    if (file) {
+      // Check file size
+      if (file.size > maxSize) {
+        $(fileInput).after('<div class="file-upload-error">' + 
+          Drupal.t('The file exceeds the maximum allowed size of 2MB.') + '</div>');
+        fileInput.value = ''; // Clear the file input
+        return false;
+      }
+      
+      // Check file type (allow images, PDFs, docs, and text)
+      const acceptableTypes = ['image/', '.pdf', '.doc', '.docx', '.txt'];
+      let validType = false;
+      
+      for (const type of acceptableTypes) {
+        if (file.type.includes(type) || file.name.toLowerCase().endsWith(type)) {
+          validType = true;
+          break;
+        }
+      }
+      
+      if (!validType) {
+        $(fileInput).after('<div class="file-upload-error">' + 
+          Drupal.t('Invalid file type. Please upload an image, PDF, Word document, or text file.') + '</div>');
+        fileInput.value = ''; // Clear the file input
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   // Function to show success message
@@ -390,5 +500,21 @@
         $(this).remove();
       });
     }, 3000);
+  }
+  
+  // Debug helper to log FormData contents
+  function debugFormData(formData) {
+    console.log("FormData contents:");
+    for (var pair of formData.entries()) {
+      if (pair[0] === 'file_attachment') {
+        console.log(pair[0] + ': File object', {
+          name: pair[1].name,
+          type: pair[1].type,
+          size: pair[1].size
+        });
+      } else {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
+    }
   }
 })(Drupal, drupalSettings, once);

@@ -257,6 +257,21 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
             ])
             ->setDisplayConfigurable("form", true)
             ->setDisplayConfigurable("view", true);
+            
+        $fields["file_attachment"] = BaseFieldDefinition::create("uri")
+            ->setLabel(t("File Attachment"))
+            ->setDescription(t("A file uploaded with the feedback."))
+            ->setDisplayOptions("view", [
+                "label" => "above",
+                "type" => "file_link",
+                "weight" => 9,
+            ])
+            ->setDisplayOptions("form", [
+                "type" => "file",
+                "weight" => 9,
+            ])
+            ->setDisplayConfigurable("form", true)
+            ->setDisplayConfigurable("view", true);
 
         return $fields;
     }
@@ -544,6 +559,31 @@ class Feedback extends ContentEntityBase implements ContentEntityInterface
     public function setAdminComments($comments)
     {
         $this->set("admin_comments", $comments);
+        return $this;
+    }
+    
+    /**
+     * Gets the file attachment.
+     *
+     * @return string
+     *   The file attachment URI.
+     */
+    public function getFileAttachment()
+    {
+        return $this->get("file_attachment")->value;
+    }
+
+    /**
+     * Sets the file attachment.
+     *
+     * @param string $file_uri
+     *   The file attachment URI.
+     *
+     * @return $this
+     */
+    public function setFileAttachment($file_uri)
+    {
+        $this->set("file_attachment", $file_uri);
         return $this;
     }
 }

@@ -8,6 +8,10 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\CloseModalDialogCommand;
 use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Ajax\InvokeCommand;
+use Drupal\Core\File\FileSystemInterface;
+use Drupal\Core\Database\Connection;
+use Drupal\Core\Messenger\MessengerInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Provides a form for submitting feedback.
@@ -76,6 +80,9 @@ class FeedbackForm extends FormBase
         // Add form ID
         $form["#id"] = "tidy-feedback-form";
 
+        // Add enctype for file uploads
+        $form["#attributes"]["enctype"] = "multipart/form-data";
+
         $form["issue_type"] = [
             "#type" => "select",
             "#title" => $this->t("Issue Type"),
@@ -109,6 +116,17 @@ class FeedbackForm extends FormBase
             ),
             "#rows" => 5,
             "#required" => true,
+        ];
+        
+        $form["file_attachment"] = [
+            "#type" => "file",
+            "#title" => $this->t("Attachment"),
+            "#description" => $this->t("Upload a screenshot or document related to this feedback (optional). Maximum size: 2MB."),
+            "#attributes" => ["id" => "tidy-feedback-file"],
+            "#upload_validators" => [
+                'file_validate_extensions' => ['jpg jpeg png gif pdf doc docx txt'],
+                'file_validate_size' => [2 * 1024 * 1024],
+            ],
         ];
 
         // Hidden fields to store element information
@@ -168,8 +186,16 @@ class FeedbackForm extends FormBase
          $response->addCommand(new HtmlCommand('#tidy-feedback-form-wrapper', $form));
        }
        else {
-         $response->addCommand(new CloseModalDialogCommand());
-         $response->addCommand(new InvokeCommand(NULL, 'tidyFeedbackSuccess'));
+         try {
+           $id = $this->processFormSubmission($form_state);
+           $response->addCommand(new CloseModalDialogCommand());
+           $response->addCommand(new InvokeCommand(NULL, 'tidyFeedbackSuccess', [$id]));
+         }
+         catch (\Exception $e) {
+           // Add error message
+           $message = '<div class="messages messages--error">' . $this->t('Error submitting feedback: @error', ['@error' => $e->getMessage()]) . '</div>';
+           $response->addCommand(new HtmlCommand('#tidy-feedback-form-wrapper', $message . render($form)));
+         }
        }
 
        return $response;
@@ -200,6 +226,56 @@ class FeedbackForm extends FormBase
         if (empty($form_state->getValue("url"))) {
             $form_state->setValue("url", \Drupal::request()->getUri());
         }
+        
+        // Validate the uploaded file if one was provided
+        $file_upload = $this->getRequest()->files->get('file_attachment');
+        if ($file_upload && $file_upload->getError() != UPLOAD_ERR_NO_FILE) {
+            // Check file errors
+            if ($file_upload->getError() != UPLOAD_ERR_OK) {
+                $form_state->setErrorByName('file_attachment', $this->t('File upload error: @error', [
+                    '@error' => $this->getUploadErrorMessage($file_upload->getError()),
+                ]));
+                return;
+            }
+            
+            // Check file size (2MB limit)
+            if ($file_upload->getSize() > 2 * 1024 * 1024) {
+                $form_state->setErrorByName('file_attachment', $this->t('The file exceeds the maximum allowed size of 2MB.'));
+            }
+            
+            // Store the uploaded file in the form state for use in submitForm
+            $form_state->set('file_upload', $file_upload);
+        }
+    }
+    
+    /**
+     * Get human-readable message for upload error code.
+     *
+     * @param int $error_code
+     *   The PHP file upload error code.
+     *
+     * @return string
+     *   Human-readable error message.
+     */
+    protected function getUploadErrorMessage($error_code) {
+        switch ($error_code) {
+            case UPLOAD_ERR_INI_SIZE:
+                return $this->t('The file exceeds the maximum upload size allowed by the server.');
+            case UPLOAD_ERR_FORM_SIZE:
+                return $this->t('The file exceeds the maximum upload size allowed by the form.');
+            case UPLOAD_ERR_PARTIAL:
+                return $this->t('The file was only partially uploaded.');
+            case UPLOAD_ERR_NO_FILE:
+                return $this->t('No file was uploaded.');
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return $this->t('The server is missing a temporary folder.');
+            case UPLOAD_ERR_CANT_WRITE:
+                return $this->t('The server failed to write the file to disk.');
+            case UPLOAD_ERR_EXTENSION:
+                return $this->t('A PHP extension stopped the file upload.');
+            default:
+                return $this->t('An unknown error occurred during file upload.');
+        }
     }
 
     /**
@@ -210,6 +286,30 @@ class FeedbackForm extends FormBase
         try {
             // Get values
             $values = $form_state->getValues();
+            
+            // Handle file upload if present
+            $file_path = NULL;
+            $file_upload = $form_state->get('file_upload');
+            if ($file_upload) {
+                // Prepare directory
+                $directory = 'public://tidy_feedback/attachments';
+                if (!\Drupal::service('file_system')->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+                    throw new \Exception('Could not prepare directory for file attachments.');
+                }
+                
+                // Generate unique filename
+                $timestamp = \Drupal::time()->getRequestTime();
+                $filename = $timestamp . '_' . preg_replace('/[^a-zA-Z0-9\._-]/', '_', $file_upload->getClientOriginalName());
+                $destination = $directory . '/' . $filename;
+                
+                // Move the uploaded file
+                if (!\Drupal::service('file_system')->moveUploadedFile($file_upload->getRealPath(), $destination)) {
+                    throw new \Exception('Could not save the uploaded file.');
+                }
+                
+                $file_path = $destination;
+                \Drupal::logger('tidy_feedback')->notice('File uploaded to @path', ['@path' => $file_path]);
+            }
 
             // Create a record in the database
             $connection = \Drupal::database();
@@ -228,14 +328,16 @@ class FeedbackForm extends FormBase
                     "element_selector" => $values["element_selector"],
                     "browser_info" => $values["browser_info"],
                     "status" => "new",
+                    "file_attachment" => $file_path,
                 ])
                 ->execute();
 
-            // Log success but don't show messenger message (we'll show via JS)
             \Drupal::logger("tidy_feedback")->notice(
-                "Feedback #@id submitted successfully.",
+                "Feedback #@id submitted successfully via form.",
                 ["@id" => $id]
             );
+            
+            return $id;
         } catch (\Exception $e) {
             \Drupal::logger("tidy_feedback")->error(
                 "Error saving feedback: @error",

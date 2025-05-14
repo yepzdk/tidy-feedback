@@ -14,6 +14,7 @@ use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\File\FileSystemInterface;
 
 /**
  * Controller for handling feedback form operations.
@@ -61,6 +62,13 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
    * @var \Drupal\Core\Session\AccountProxyInterface
    */
   protected $currentUser;
+  
+  /**
+   * The file system service.
+   *
+   * @var \Drupal\Core\File\FileSystemInterface
+   */
+  protected $fileSystem;
 
   /**
    * Constructor for TidyFeedbackFormController.
@@ -84,7 +92,8 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     TimeInterface $time,
     UuidInterface $uuid,
     LoggerChannelFactoryInterface $logger_factory,
-    AccountProxyInterface $current_user
+    AccountProxyInterface $current_user,
+    FileSystemInterface $file_system
   ) {
     $this->formBuilder = $form_builder;
     $this->database = $database;
@@ -92,6 +101,7 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     $this->uuid = $uuid;
     $this->loggerFactory = $logger_factory;
     $this->currentUser = $current_user;
+    $this->fileSystem = $file_system;
   }
 
   /**
@@ -104,7 +114,8 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
       $container->get('datetime.time'),
       $container->get('uuid'),
       $container->get('logger.factory'),
-      $container->get('current_user')
+      $container->get('current_user'),
+      $container->get('file_system')
     );
   }
 
@@ -164,6 +175,19 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
       else {
         $data = $request->request->all();
       }
+      
+      // Log file upload if present
+      $fileUpload = $request->files->get('file_attachment');
+      if ($fileUpload) {
+        $this->getLogger('tidy_feedback')->notice(
+          "File upload found: @filename, size: @size, error: @error",
+          [
+            "@filename" => $fileUpload->getClientOriginalName(),
+            "@size" => $fileUpload->getSize(),
+            "@error" => $fileUpload->getError()
+          ]
+        );
+      }
 
       $this->getLogger('tidy_feedback')->notice("Received data: @data", [
         "@data" => print_r($data, TRUE),
@@ -205,6 +229,30 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
       $issueType = isset($data["issue_type"]) ? $data["issue_type"] : "other";
       $severity = isset($data["severity"]) ? $data["severity"] : "normal";
       $elementSelector = isset($data["element_selector"]) ? $data["element_selector"] : "";
+      
+      // Handle file upload if present
+      $filePath = NULL;
+      $fileUpload = $request->files->get('file_attachment');
+      if ($fileUpload && $fileUpload->getError() == UPLOAD_ERR_OK) {
+        // Prepare directory
+        $directory = 'public://tidy_feedback/attachments';
+        if (!$this->fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+          throw new \Exception('Could not prepare directory for file attachments.');
+        }
+        
+        // Generate unique filename
+        $timestamp = $this->time->getRequestTime();
+        $filename = $timestamp . '_' . preg_replace('/[^a-zA-Z0-9\._-]/', '_', $fileUpload->getClientOriginalName());
+        $destination = $directory . '/' . $filename;
+        
+        // Move the uploaded file
+        if (!$this->fileSystem->moveUploadedFile($fileUpload->getRealPath(), $destination)) {
+          throw new \Exception('Could not save the uploaded file.');
+        }
+        
+        $filePath = $destination;
+        $this->getLogger('tidy_feedback')->notice('File uploaded to @path', ['@path' => $filePath]);
+      }
 
       // Insert into database.
       $id = $this->database
@@ -222,6 +270,7 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
           "element_selector" => $elementSelector,
           "browser_info" => $browserInfo,
           "status" => "new",
+          "file_attachment" => $filePath,
         ])
         ->execute();
 
