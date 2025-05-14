@@ -164,9 +164,17 @@ function tidy_feedback_install(): void {
     \Drupal::logger('tidy_feedback')->error('Failed to create parent directory at @path', ['@path' => $parent_dir]);
   }
   
-  // Then create the attachments directory
+  // Then create the attachments directory with more permissive settings
   if ($file_system->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS)) {
     \Drupal::logger('tidy_feedback')->notice('Created attachments directory at @path', ['@path' => $directory]);
+    
+    // Set more permissive permissions for the upload directory
+    $real_path = $file_system->realpath($directory);
+    if ($real_path) {
+      // Set directory permissions to 0775 (rwxrwxr-x)
+      chmod($real_path, 0775);
+      \Drupal::logger('tidy_feedback')->notice('Set permissions on directory @path', ['@path' => $real_path]);
+    }
   }
   else {
     \Drupal::logger('tidy_feedback')->error('Failed to create attachments directory at @path', ['@path' => $directory]);
@@ -236,9 +244,17 @@ function tidy_feedback_update_9001(): string {
     \Drupal::logger('tidy_feedback')->error('Failed to create parent directory at @path', ['@path' => $parent_dir]);
   }
   
-  // Then create the attachments directory
+  // Then create the attachments directory with more permissive settings
   if ($file_system->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS)) {
     \Drupal::logger('tidy_feedback')->notice('Created attachments directory at @path', ['@path' => $directory]);
+    
+    // Set more permissive permissions for the upload directory
+    $real_path = $file_system->realpath($directory);
+    if ($real_path) {
+      // Set directory permissions to 0775 (rwxrwxr-x)
+      chmod($real_path, 0775);
+      \Drupal::logger('tidy_feedback')->notice('Set permissions on directory @path', ['@path' => $real_path]);
+    }
   }
   else {
     \Drupal::logger('tidy_feedback')->error('Failed to create attachments directory at @path', ['@path' => $directory]);

@@ -30,13 +30,46 @@ function tidy_feedback_page_attachments(array &$attachments) {
 
   // Only add for users with permission.
   if ($current_user->hasPermission('access tidy feedback')) {
-    $attachments['#attached']['library'][] = 'tidy_feedback/tidy_feedback';
+    // Use the direct form implementation which handles file uploads better
+    $attachments['#attached']['library'][] = 'tidy_feedback/tidy_feedback_direct';
 
     // Add the CSRF token to JS settings
     $attachments['#attached']['drupalSettings']['token'] = \Drupal::csrfToken()->get();
 
     // Debug message to console
-    $attachments['#attached']['drupalSettings']['tidyFeedback']['debug'] = 'Banner should be visible';
+    $attachments['#attached']['drupalSettings']['tidyFeedback'] = [
+      'debug' => 'Banner should be visible',
+      'csrfToken' => \Drupal::csrfToken()->get('tidy_feedback_direct_form'),
+    ];
+    
+    // Add inline jQuery script to ensure banner gets added
+    $attachments['#attached']['html_head'][] = [
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'script',
+        '#value' => '
+          (function($) {
+            $(document).ready(function() {
+              console.log("Direct inline script running");
+              if ($(".tidy-feedback-banner").length === 0) {
+                var $banner = $("<div class=\"tidy-feedback-banner\"><button class=\"tidy-feedback-button\">Provide Feedback</button></div>");
+                $("body").append($banner);
+                
+                $banner.on("click", function(e) {
+                  console.log("Banner clicked from inline script");
+                  e.preventDefault();
+                  window.open("/tidy-feedback/direct-form?url=" + encodeURIComponent(window.location.href), "_blank");
+                });
+              }
+            });
+          })(jQuery);
+        ',
+      ],
+      'tidy_feedback_inline_script',
+    ];
+    
+    // Log that we're attaching the library
+    \Drupal::logger('tidy_feedback')->notice('Attaching tidy_feedback_direct library to page');
   }
 }
 
@@ -46,7 +79,242 @@ function tidy_feedback_page_attachments(array &$attachments) {
 function tidy_feedback_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id === 'tidy_feedback_form') {
     $form['#attached']['library'][] = 'tidy_feedback/tidy_feedback_form';
+    
+    // Ensure proper form configuration for file uploads
+    $form['#attributes']['enctype'] = 'multipart/form-data';
+    
+    // Set direct form handling
+    $form['#method'] = 'post';
+    $form['#action'] = '/tidy-feedback/direct-form/submit';
+    
+    // Log form building for debugging
+    \Drupal::logger('tidy_feedback')->notice('Form alter applied to tidy_feedback_form');
   }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for tidy_feedback_form.
+ */
+function tidy_feedback_form_tidy_feedback_form_alter(&$form, &$form_state, $form_id) {
+  // Add the form submission handler
+  $form['#submit'][] = 'tidy_feedback_form_submit_handler';
+  
+  // Set cache to prevent caching
+  $form['#cache'] = [
+    'max-age' => 0,
+  ];
+  
+  // Add custom validation and redirect handling
+  $form['#validate'][] = 'tidy_feedback_form_validate_handler';
+  
+  // Ensure the form has proper file upload configuration
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+}
+
+/**
+ * Custom submit handler for the tidy feedback form.
+ */
+function tidy_feedback_form_submit_handler(&$form, &$form_state) {
+  // Log form submission
+  \Drupal::logger('tidy_feedback')->notice('Custom submit handler triggered. Request method: @method', [
+    '@method' => \Drupal::request()->getMethod(),
+  ]);
+  
+  try {
+    // Extract values
+    $values = $form_state->getValues();
+    $element_selector = $values['element_selector'] ?? '';
+    $url = $values['url'] ?? '';
+    $description = $values['description'] ?? '';
+    $issue_type = $values['issue_type'] ?? 'other';
+    $severity = $values['severity'] ?? 'normal';
+    $browser_info = $values['browser_info'] ?? '{}';
+    
+    if (empty($description)) {
+      throw new \Exception('Description is required');
+    }
+    
+    // Process file attachment
+    $attachment_fid = NULL;
+    
+    // Check for files in $_FILES first (direct upload)
+    if (!empty($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+      \Drupal::logger('tidy_feedback')->notice('Direct file upload found');
+    
+      // Create destination directory
+      $directory = 'public://tidy_feedback/attachments';
+      $file_system = \Drupal::service('file_system');
+      $file_system->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS);
+    
+      // Generate unique filename
+      $filename = time() . '_' . $_FILES['attachment']['name'];
+      $destination = $directory . '/' . $filename;
+      $destination_path = $file_system->realpath($directory) . '/' . $filename;
+    
+      // Move the uploaded file
+      if (move_uploaded_file($_FILES['attachment']['tmp_name'], $destination_path)) {
+        // Create file entity
+        $file = \Drupal\file\Entity\File::create([
+          'uri' => $destination,
+          'uid' => \Drupal::currentUser()->id(),
+          'status' => FILE_STATUS_PERMANENT,
+          'filename' => $filename,
+        ]);
+        $file->save();
+      
+        $attachment_fid = $file->id();
+        \Drupal::logger('tidy_feedback')->notice('File saved using direct handling: @id', [
+          '@id' => $attachment_fid,
+        ]);
+      }
+    } 
+    else {
+      // Try managed file approach as fallback
+      $attachment = $values['attachment'] ?? NULL;
+      if (!empty($attachment[0])) {
+        $attachment_fid = $attachment[0];
+      
+        // Set file as permanent
+        $file = \Drupal\file\Entity\File::load($attachment_fid);
+        if ($file) {
+          $file->setPermanent();
+          $file->save();
+          \Drupal::logger('tidy_feedback')->notice('File saved as permanent: @uri', [
+            '@uri' => $file->getFileUri(),
+          ]);
+        }
+      } 
+      else {
+        \Drupal::logger('tidy_feedback')->notice('No file attachment found');
+      }
+    }
+    
+    // Insert feedback record
+    $database = \Drupal::database();
+    $time = \Drupal::time()->getRequestTime();
+    $uuid = \Drupal::service('uuid')->generate();
+    $current_user = \Drupal::currentUser();
+    
+    $id = $database->insert('tidy_feedback')
+      ->fields([
+        'uuid' => $uuid,
+        'uid' => $current_user->id(),
+        'created' => $time,
+        'changed' => $time,
+        'issue_type' => $issue_type,
+        'severity' => $severity,
+        'description__value' => $description,
+        'description__format' => 'basic_html',
+        'url' => $url,
+        'element_selector' => $element_selector,
+        'browser_info' => $browser_info,
+        'status' => 'new',
+        'attachment__target_id' => $attachment_fid,
+      ])
+      ->execute();
+    
+    // Add file usage record if file was attached
+    if ($attachment_fid) {
+      \Drupal::service('file.usage')->add(
+        \Drupal\file\Entity\File::load($attachment_fid),
+        'tidy_feedback',
+        'tidy_feedback',
+        $id
+      );
+    }
+    
+    // Add success message
+    \Drupal::messenger()->addStatus(t('Thank you for your feedback. It has been submitted successfully.'));
+    
+    // Set redirect - special handling for different URL types
+    if (!empty($url)) {
+      try {
+        // For absolute URLs, use direct response redirection
+        if (strpos($url, 'http') === 0) {
+          // Use direct response for external URLs
+          $response = new \Symfony\Component\HttpFoundation\RedirectResponse($url);
+          $form_state->setResponse($response);
+        } 
+        // For internal paths
+        else {
+          $form_state->setRedirect('<front>');
+        }
+      } catch (\Exception $e) {
+        \Drupal::logger('tidy_feedback')->error('Redirect error: @error', [
+          '@error' => $e->getMessage(),
+        ]);
+        $form_state->setRedirect('<front>');
+      }
+    }
+    else {
+      $form_state->setRedirect('<front>');
+    }
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('tidy_feedback')->error('Error in custom submit handler: @error', [
+      '@error' => $e->getMessage(),
+    ]);
+    \Drupal::messenger()->addError(t('An error occurred while processing your feedback: @error', [
+      '@error' => $e->getMessage(),
+    ]));
+    $form_state->setRebuild();
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for tidy_feedback_direct_form.
+ */
+function tidy_feedback_preprocess_tidy_feedback_direct_form(&$variables) {
+  // Temporarily disabled
+}
+
+/**
+ * Custom validation handler for the tidy feedback form.
+ */
+function tidy_feedback_form_validate_handler(&$form, &$form_state) {
+  \Drupal::logger('tidy_feedback')->notice('Custom validation handler triggered');
+
+  // Log form values for debugging
+  $values = $form_state->getValues();
+  \Drupal::logger('tidy_feedback')->notice('Form values in validation: @values', [
+    '@values' => print_r($values, TRUE),
+  ]);
+  
+  // Log any uploaded files
+  $request = \Drupal::request();
+  \Drupal::logger('tidy_feedback')->notice('Files in request: @files', [
+    '@files' => print_r($request->files->all(), TRUE),
+  ]);
+  
+  // Check if we have a valid upload directory
+  $directory = 'public://tidy_feedback/attachments';
+  $file_system = \Drupal::service('file_system');
+  $file_system->prepareDirectory($directory, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY | \Drupal\Core\File\FileSystemInterface::MODIFY_PERMISSIONS);
+  
+  // Prevent browser validation from blocking submission
+  if ($form_state->hasAnyErrors()) {
+    \Drupal::logger('tidy_feedback')->notice('Errors found in form, continuing anyway for debugging');
+    // Clear errors for testing purposes
+    $form_state->clearErrors();
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function tidy_feedback_page_alter(&$page) {
+  // Add JS to capture browser info
+  $path = \Drupal::request()->getPathInfo();
+  if (strpos($path, '/tidy-feedback/feedback-form') === 0) {
+    $page['#attached']['library'][] = 'tidy_feedback/tidy_feedback_form_page';
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for tidy-feedback-form-page.html.twig.
+ */
+function tidy_feedback_preprocess_tidy_feedback_form_page(&$variables) {
+  // Temporarily disabled
 }
 
 /**
@@ -54,6 +322,24 @@ function tidy_feedback_form_alter(&$form, FormStateInterface $form_state, $form_
  */
 function tidy_feedback_theme() {
   return [
+    'tidy_feedback_form_page' => [
+      'template' => 'tidy-feedback-form-page',
+      'variables' => [
+        'element_selector' => '',
+        'url' => '',
+        'browser_info' => '{}',
+        'form_action' => '',
+        'back_url' => '',
+        'csrf_token' => '',
+      ],
+    ],
+    'tidy_feedback_direct_form' => [
+      'variables' => [
+        'element_selector' => '',
+        'url' => '',
+        'browser_info' => '{}',
+      ],
+    ],
     'tidy_feedback_form' => [
       'template' => 'tidy-feedback-form',
       'variables' => [

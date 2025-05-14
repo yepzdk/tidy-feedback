@@ -13,7 +13,7 @@
 #}
 
 <div{{ attributes.addClass('tidy-feedback-form-container') }}>
-  <form id="tidy-feedback-form" class="tidy-feedback-form" enctype="multipart/form-data" method="post" action="/tidy-feedback/simple-submit">
+  <form id="tidy-feedback-form" class="tidy-feedback-form" enctype="multipart/form-data" method="post" action="/tidy-feedback/simple-submit" accept-charset="UTF-8">
     <div class="form-item">
       <label for="issue_type">{{ 'Issue Type'|t }}</label>
       <select id="issue_type" name="issue_type" required>
@@ -42,13 +42,16 @@
 
     <div class="form-item">
       <label for="attachment">{{ 'Attachment'|t }}</label>
-      <input type="file" id="attachment" name="files[attachment]" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv">
+      <input type="file" id="attachment" name="files[attachment]" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" data-drupal-selector="edit-attachment-upload">
       <div class="description">{{ 'Upload a file to provide additional context (optional). Allowed extensions: jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx, txt, csv. Maximum size: 5MB.'|t }}</div>
     </div>
 
     <input type="hidden" id="tidy-feedback-url" name="url" value="{{ current_url }}">
     <input type="hidden" id="tidy-feedback-element-selector" name="element_selector" value="{{ element_selector }}">
     <input type="hidden" id="tidy-feedback-browser-info" name="browser_info" value="{{ browser_info }}">
+    <input type="hidden" name="form_build_id" value="{{ 'form-' ~ random() }}">
+    <input type="hidden" name="form_token" value="{{ form_token }}">
+    <input type="hidden" name="form_id" value="tidy_feedback_form">
 
     <div class="form-actions">
       <button type="submit" id="tidy-feedback-submit" class="button button--primary">{{ 'Submit Feedback'|t }}</button>

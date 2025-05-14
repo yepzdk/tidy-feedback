@@ -6,123 +6,90 @@ tidy_feedback.settings:
   requirements:
     _permission: "administer tidy feedback"
 
-tidy_feedback.submit:
-  path: "/tidy-feedback/submit"
+tidy_feedback.feedback_form:
+  path: '/tidy-feedback/feedback-form'
   defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackFormController::submitDirectFeedback'
-    _title: "Submit Feedback"
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectController::handleForm'
+    _title: 'Submit Feedback'
   requirements:
-    _permission: "access tidy feedback"
-  methods: [POST]
+    _permission: 'access tidy feedback'
+  options:
+    no_cache: TRUE
+    methods: [GET, POST]
+
+tidy_feedback.debug_file_uploads:
+  path: '/tidy-feedback/debug-file-uploads'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDebugController::debugFileUploads'
+    _title: 'Debug File Uploads'
+  requirements:
+    _permission: 'access tidy feedback'
   options:
     no_cache: TRUE
 
-tidy_feedback.test_form:
-  path: "/tidy-feedback/test-form"
+tidy_feedback.debug_file_upload_handler:
+  path: '/tidy-feedback/debug-file-upload-handler'
   defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectController::testForm'
-    _title: "Test Feedback Form"
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDebugController::handleTestFileUpload'
+    _title: 'Debug File Upload Handler'
   requirements:
-    _permission: "access tidy feedback"
+    _permission: 'access tidy feedback'
   options:
     no_cache: TRUE
+    methods: [GET, POST]
 
-tidy_feedback.test_submit:
-  path: "/tidy-feedback/test-submit"
-  defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectController::testSubmit'
-    _title: "Test Submit Feedback"
-  requirements:
-    _permission: "access tidy feedback"
-  methods: [POST]
-  options:
-    no_cache: TRUE
-    
-tidy_feedback.template_form:
-  path: "/tidy-feedback/template-form/{element_selector}"
-  defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackTemplateController::displayForm'
-    _title: "Submit Feedback"
-    element_selector: ''
-  requirements:
-    _permission: "access tidy feedback"
-  options:
-    no_cache: TRUE
-
-tidy_feedback.template_submit:
-  path: "/tidy-feedback/template-submit"
-  defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackTemplateController::submitForm'
-    _title: "Submit Feedback"
-  requirements:
-    _permission: "access tidy feedback"
-  methods: [POST]
-  options:
-    no_cache: TRUE
-    
-tidy_feedback.simple_test:
-  path: "/tidy-feedback/simple-test/{element_selector}"
-  defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackSimpleController::testForm'
-    _title: "Submit Feedback"
-    element_selector: ''
-  requirements:
-    _permission: "access tidy feedback"
-  options:
-    no_cache: TRUE
-    
 tidy_feedback.direct_test:
-  path: "/tidy-feedback/direct-test"
+  path: '/tidy-feedback/direct-test'
   defaults:
     _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectTestController::directTestForm'
-    _title: "Direct Test Form"
+    _title: 'Direct Test Form'
   requirements:
-    _permission: "access tidy feedback"
+    _permission: 'access tidy feedback'
   options:
     no_cache: TRUE
-    
+
 tidy_feedback.direct_test_submit:
-  path: "/tidy-feedback/direct-test-submit"
+  path: '/tidy-feedback/direct-test-submit'
   defaults:
     _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectTestController::handleDirectTestSubmit'
-    _title: "Direct Test Submit"
+    _title: 'Direct Test Submit'
   requirements:
-    _permission: "access tidy feedback"
-  methods: [POST]
+    _permission: 'access tidy feedback'
   options:
     no_cache: TRUE
+    methods: [POST]
+
+tidy_feedback.simple_page:
+  path: '/tidy-feedback/page'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackPageController::displayForm'
+    _title: 'Feedback Page'
+  requirements:
+    _permission: 'access tidy feedback'
 
 tidy_feedback.simple_submit:
-  path: "/tidy-feedback/simple-submit"
+  path: '/tidy-feedback/simple-submit'
   defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackSimpleController::handleSubmit'
-    _title: "Submit Simple Form"
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackPageController::handleSubmit'
+    _title: 'Feedback Submission'
   requirements:
-    _permission: "access tidy feedback"
-  methods: [POST]
+    _permission: 'access tidy feedback'
   options:
     no_cache: TRUE
-
-tidy_feedback.form:
-  path: "/tidy-feedback/form"
-  defaults:
-    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackFormController::getForm'
-    _title: "Submit Feedback"
-  requirements:
-    _permission: "access tidy feedback"
+    methods: [POST]
 
 entity.tidy_feedback.canonical:
   path: '/tidy-feedback/{tidy_feedback}'
   defaults:
     _entity_view: 'tidy_feedback'
-    _title_callback: '\\Drupal\\tidy_feedback\\Controller\\TidyFeedbackController::getTitle'
+    _title_callback: '\Drupal\tidy_feedback\Controller\TidyFeedbackAdminController::getTitle'
   requirements:
     _permission: 'view tidy feedback reports'
 
 entity.tidy_feedback.collection:
   path: "/admin/reports/tidy-feedback"
   defaults:
-    _entity_list: "tidy_feedback"
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackAdminController::listFeedback'
     _title: "Feedback Reports"
   requirements:
     _permission: "view tidy feedback reports"
@@ -142,3 +109,87 @@ entity.tidy_feedback.delete_form:
     _title: "Delete Feedback"
   requirements:
     _permission: "administer tidy feedback"
+
+tidy_feedback.basic_debug:
+  path: '/tidy-feedback/basic-debug'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackBasicDebugController::debugPage'
+    _title: 'Debug Page'
+  requirements:
+    _permission: 'access tidy feedback'
+  options:
+    no_cache: TRUE
+
+tidy_feedback.basic_debug_create_dir:
+  path: '/tidy-feedback/basic-debug/create-dir'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackBasicDebugController::createDirectory'
+    _title: 'Create Directory'
+  requirements:
+    _permission: 'access tidy feedback'
+  options:
+    no_cache: TRUE
+
+tidy_feedback.basic_debug_fix_permissions:
+  path: '/tidy-feedback/basic-debug/fix-permissions'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackBasicDebugController::fixPermissions'
+    _title: 'Fix Permissions'
+  requirements:
+    _permission: 'access tidy feedback'
+  options:
+    no_cache: TRUE
+
+tidy_feedback.basic_debug_upload:
+  path: '/tidy-feedback/basic-debug/upload'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackBasicDebugController::handleUpload'
+    _title: 'Test Upload'
+  requirements:
+    _permission: 'access tidy feedback'
+  options:
+    no_cache: TRUE
+    methods: [POST]
+
+tidy_feedback.simple_upload_test:
+  path: '/tidy-feedback/simple-upload/test'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackSimpleUploadController::testPage'
+    _title: 'Simple Upload Test'
+  requirements:
+    _permission: 'access tidy feedback'
+  options:
+    no_cache: TRUE
+
+tidy_feedback.simple_upload_process:
+  path: '/tidy-feedback/simple-upload/process'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackSimpleUploadController::processUpload'
+    _title: 'Process Simple Upload'
+  requirements:
+    _permission: 'access tidy feedback'
+  options:
+    no_cache: TRUE
+    methods: [POST]
+    
+tidy_feedback.direct_form:
+  path: '/tidy-feedback/direct-form'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectFormController::displayForm'
+    _title: 'Submit Feedback'
+  requirements:
+    _permission: 'access tidy feedback'
+  options:
+    no_cache: TRUE
+    methods: [GET, POST]
+
+tidy_feedback.direct_form_submit:
+  path: '/tidy-feedback/direct-form/submit'
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDirectFormController::handleFormSubmission'
+    _title: 'Submit Feedback'
+  requirements:
+    _permission: 'access tidy feedback'
+  options:
+    no_cache: TRUE
+    methods: [POST]

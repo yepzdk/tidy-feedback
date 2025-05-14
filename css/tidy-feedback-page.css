@@ -1,0 +1,123 @@
+/* Styles for the Tidy Feedback form page */
+.tidy-feedback-page {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tidy-feedback-page__header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.tidy-feedback-page__header h1 {
+  margin-top: 0;
+  color: #0071b8;
+}
+
+.tidy-feedback-page__element-info {
+  background-color: #f5f5f5;
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-family: monospace;
+  border-left: 4px solid #0071b8;
+  margin-top: 1rem;
+  word-break: break-word;
+}
+
+.tidy-feedback-page__content {
+  margin-bottom: 1.5rem;
+}
+
+/* Form Styles */
+.tidy-feedback-form .form-item {
+  margin-bottom: 1.5rem;
+}
+
+.tidy-feedback-form label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.tidy-feedback-form select,
+.tidy-feedback-form textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.tidy-feedback-form textarea {
+  min-height: 120px;
+}
+
+.tidy-feedback-form .description {
+  font-size: 0.875rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.tidy-feedback-form .form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.tidy-feedback-form .button {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.tidy-feedback-form .button--primary {
+  background-color: #0071b8;
+  color: white;
+  border: none;
+}
+
+.tidy-feedback-form .button--primary:hover {
+  background-color: #005990;
+}
+
+.tidy-feedback-form #tidy-feedback-cancel {
+  background-color: transparent;
+  color: #0071b8;
+  border: 1px solid #0071b8;
+}
+
+.tidy-feedback-form #tidy-feedback-cancel:hover {
+  background-color: #f5f9fd;
+}
+
+/* File Upload Styling */
+.tidy-feedback-form input[type="file"] {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 4px;
+  width: 100%;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .tidy-feedback-page {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .tidy-feedback-form .form-actions {
+    flex-direction: column;
+  }
+  
+  .tidy-feedback-form .button {
+    width: 100%;
+  }
+}

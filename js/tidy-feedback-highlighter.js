@@ -209,167 +209,24 @@
     return path.join(" > ");
   }
 
-  // Function to open feedback modal
+  // Function to open feedback form
   function openFeedbackModal(elementSelector) {
-    console.log("Opening feedback modal for element:", elementSelector);
-    
-    // Create a simple form with the element selector
-    var formHtml = `
-      <div class="tidy-feedback-form-container">
-        <form id="tidy-feedback-form" action="/tidy-feedback/simple-submit" method="post" enctype="multipart/form-data">
-          <div class="form-item">
-            <label for="issue_type">Issue Type</label>
-            <select id="issue_type" name="issue_type" required>
-              <option value="bug">Bug</option>
-              <option value="enhancement">Enhancement</option>
-              <option value="question">Question</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          
-          <div class="form-item">
-            <label for="severity">Severity</label>
-            <select id="severity" name="severity" required>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="normal" selected>Normal</option>
-              <option value="low">Low</option>
-            </select>
-          </div>
-          
-          <div class="form-item">
-            <label for="description">Description</label>
-            <textarea id="description" name="description" rows="5" required></textarea>
-          </div>
-          
-          <div class="form-item">
-            <label for="attachment">Attachment</label>
-            <input type="file" id="attachment" name="files[attachment]" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv">
-            <div class="description">Upload a file to provide additional context (optional).</div>
-          </div>
-          
-          <input type="hidden" id="tidy-feedback-url" name="url" value="${window.location.href}">
-          <input type="hidden" id="tidy-feedback-element-selector" name="element_selector" value="${elementSelector}">
-          <input type="hidden" id="tidy-feedback-browser-info" name="browser_info" value="">
-          
-          <div class="form-actions">
-            <button type="submit" id="tidy-feedback-submit" class="button button--primary">Submit Feedback</button>
-            <button type="button" id="tidy-feedback-cancel" class="button">Cancel</button>
-          </div>
-        </form>
-      </div>
-    `;
-    
-    // Create modal container if needed
-    if (!$("#tidy-feedback-modal").length) {
-      $("body").append('<div id="tidy-feedback-modal" class="tidy-feedback-ui"></div>');
-    }
-    
-    // Set the form content 
-    $("#tidy-feedback-modal").html(formHtml);
-    
-    // Pre-fill browser info
-    setBrowserInfoField();
-    
-    // Create dialog
-    var dialogElement = document.getElementById("tidy-feedback-modal");
-    var dialogObj = Drupal.dialog(dialogElement, {
-      title: Drupal.t("Submit Feedback"),
-      width: "500px",
-      dialogClass: "tidy-feedback-ui",
-    });
-    
-    // Store dialog object as a jQuery data attribute for easy access
-    $(dialogElement).data("drupalDialog", dialogObj);
-    
-    // Show the dialog
-    dialogObj.showModal();
-    
-    // Add submit handler
-    $("#tidy-feedback-form").on("submit", function(e) {
-      e.preventDefault();
-      
-      var formData = new FormData(this);
-      
-      // Submit the form via AJAX
-      $.ajax({
-        url: $(this).attr('action'),
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(response) {
-          // Close the dialog
-          dialogObj.close();
-          
-          // Show success message
-          showSuccessMessage();
-        },
-        error: function(xhr, status, error) {
-          console.error("Error submitting form:", error);
-          alert("Error submitting feedback. Please try again.");
-        }
-      });
-    });
-    
-    // Add cancel button handler
-    $("#tidy-feedback-cancel").on("click", function() {
-      dialogObj.close();
-    });
+    console.log("Opening feedback form for element:", elementSelector);
     
     // Deactivate feedback mode
     toggleFeedbackMode();
+    
+    // Properly encode the parameters for the URL
+    var encodedSelector = encodeURIComponent(elementSelector);
+    var encodedUrl = encodeURIComponent(window.location.href);
+    
+    // Log the URL we're about to redirect to
+    console.log("Redirecting to feedback form with element:", elementSelector);
+    
+    // Use Drupal's URL function to construct the proper URL
+    const formUrl = Drupal.url('tidy-feedback/feedback-form');
+    window.location.href = formUrl + '?element_selector=' + encodedSelector + '&url=' + encodedUrl;
   }
 
-  /**
-   * Sets browser information in the hidden input field.
-   */
-  function setBrowserInfoField() {
-    var browserInfo = {
-      userAgent: navigator.userAgent,
-      screenWidth: window.screen.width,
-      screenHeight: window.screen.height,
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight,
-      devicePixelRatio: window.devicePixelRatio || 1,
-      platform: navigator.platform,
-      language: navigator.language,
-    };
-
-    // Set the value as a properly formatted JSON string
-    $("#tidy-feedback-browser-info").val(JSON.stringify(browserInfo));
-  }
-
-  /**
-   * Function to show success message
-   */
-  function showSuccessMessage() {
-    const message = $('<div class="tidy-feedback-success-message"></div>')
-      .text(Drupal.t("Feedback submitted successfully"))
-      .appendTo("body");
-
-    // Add styles to make the message more visible
-    message.css({
-      'position': 'fixed',
-      'top': '20px',
-      'right': '20px',
-      'background-color': '#4CAF50',
-      'color': 'white',
-      'padding': '15px 20px',
-      'border-radius': '4px',
-      'box-shadow': '0 2px 5px rgba(0,0,0,0.2)',
-      'z-index': '9999'
-    });
-
-    setTimeout(function () {
-      message.fadeOut(400, function () {
-        $(this).remove();
-      });
-      
-      // Redirect to the feedback list after showing the message
-      setTimeout(function() {
-        window.location.href = '/admin/reports/tidy-feedback';
-      }, 1000);
-    }, 2000);
-  }
+  // No longer needed as we're using a dedicated page instead of a modal
 })(Drupal, drupalSettings, once);

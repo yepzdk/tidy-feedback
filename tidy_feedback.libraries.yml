@@ -17,6 +17,20 @@ tidy_feedback:
     - core/drupal.dialog
     - core/drupal.dialog.ajax
 
+tidy_feedback_form_page:
+  version: 1.x
+  css:
+    theme:
+      css/tidy-feedback-form-page.css: {}
+      css/tidy-feedback-form.css: {}
+  js:
+    js/tidy-feedback-form-page.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupalSettings
+    - core/once
+    - core/jquery
+
 tidy_feedback_template_form:
   version: 1.x
   css:
@@ -30,4 +44,19 @@ tidy_feedback_template_form:
     - core/once
     - core/jquery
     - core/drupal.dialog
+    
+tidy_feedback_direct:
+  version: 1.x
+  css:
+    theme:
+      css/tidy-feedback-banner.css: {}
+      css/tidy-feedback-highlighter.css: {}
+      css/tidy-feedback-form.css: {}
+      css/tidy-feedback-direct.css: {}
+  js:
+    js/tidy-feedback-direct.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupalSettings
+    - core/jquery
 

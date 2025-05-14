@@ -1,0 +1,145 @@
+{#
+/**
+ * @file
+ * Twig template for tidy feedback form page.
+ *
+ * Available variables:
+ * - element_selector: The CSS selector of the selected element.
+ * - url: The URL where the feedback was initiated.
+ * - browser_info: JSON string with browser information.
+ * - form_action: The URL where the form should be submitted.
+ * - back_url: The URL to return to after canceling.
+ * - csrf_token: CSRF token for form security.
+ */
+#}
+
+<script>
+// Add error handling for form submission
+document.addEventListener('DOMContentLoaded', function() {
+  var form = document.getElementById('tidy-feedback-form');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      console.log('Form submission triggered');
+      
+      // Check if there's a file input with a file selected
+      var fileInput = document.getElementById('attachment');
+      if (fileInput && fileInput.files.length > 0) {
+        console.log('File selected for upload:', fileInput.files[0].name);
+        
+        // Show file info in page for debugging
+        var fileInfo = document.createElement('div');
+        fileInfo.className = 'file-info';
+        fileInfo.innerHTML = '<strong>File to upload:</strong> ' + 
+          fileInput.files[0].name + ' (' + Math.round(fileInput.files[0].size/1024) + ' KB)';
+        form.appendChild(fileInfo);
+      }
+    });
+  }
+});
+</script>
+
+<div class="tidy-feedback-page">
+  <div class="tidy-feedback-page__header">
+    <h1>{{ 'Submit Feedback'|t }}</h1>
+    {% if element_selector %}
+      <div class="tidy-feedback-page__element-info">
+        <strong>{{ 'Selected element:'|t }}</strong> {{ element_selector|raw }}
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="tidy-feedback-page__content">
+    <form id="tidy-feedback-form" class="tidy-feedback-form" action="{{ form_action|raw }}" method="post" enctype="multipart/form-data" onsubmit="console.log('Form submitting with enctype: ' + this.enctype);">
+      <input type="hidden" name="formToken" value="{{ csrf_token|raw }}">
+      <!-- Extra Drupal form fields to ensure proper handling -->
+      <input type="hidden" name="form_build_id" value="form-{{ random() }}">
+      <input type="hidden" name="form_token" value="{{ csrf_token|raw }}">
+      <input type="hidden" name="form_id" value="tidy_feedback_form">
+      <div class="form-item">
+        <label for="issue_type">{{ 'Issue Type'|t }}</label>
+        <select id="issue_type" name="issue_type" required>
+          <option value="bug">{{ 'Bug'|t }}</option>
+          <option value="enhancement">{{ 'Enhancement'|t }}</option>
+          <option value="question">{{ 'Question'|t }}</option>
+          <option value="other">{{ 'Other'|t }}</option>
+        </select>
+      </div>
+
+      <div class="form-item">
+        <label for="severity">{{ 'Severity'|t }}</label>
+        <select id="severity" name="severity" required>
+          <option value="critical">{{ 'Critical'|t }}</option>
+          <option value="high">{{ 'High'|t }}</option>
+          <option value="normal" selected>{{ 'Normal'|t }}</option>
+          <option value="low">{{ 'Low'|t }}</option>
+        </select>
+      </div>
+
+      <div class="form-item">
+        <label for="description">{{ 'Description'|t }}</label>
+        <textarea id="description" name="description" rows="5" required></textarea>
+        <div class="description">{{ 'Please describe the issue or suggestion in detail.'|t }}</div>
+      </div>
+
+      <div class="form-item">
+        <label for="attachment">{{ 'Attachment'|t }}</label>
+        <input type="file" id="attachment" name="files[attachment]" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" onchange="document.getElementById('file-selected').textContent = this.files.length ? this.files[0].name : 'No file selected';">
+        <div class="description">{{ 'Upload a file to provide additional context (optional). Allowed extensions: jpg, jpeg, png, gif, pdf, doc, docx, xls, xlsx, txt, csv. Maximum size: 5MB.'|t }}</div>
+        <div class="file-status">
+          <strong>Selected file:</strong> <span id="file-selected">No file selected</span>
+        </div>
+      </div>
+
+      <input type="hidden" id="tidy-feedback-url" name="url" value="{{ url|raw }}">
+      <input type="hidden" id="tidy-feedback-element-selector" name="element_selector" value="{{ element_selector|raw }}">
+      <input type="hidden" id="tidy-feedback-browser-info" name="browser_info" value="{{ browser_info|raw }}">
+
+      <div class="form-actions">
+        <button type="submit" id="tidy-feedback-submit" class="button button--primary">{{ 'Submit Feedback'|t }}</button>
+        <a href="{{ back_url|raw }}" id="tidy-feedback-cancel" class="button">{{ 'Cancel'|t }}</a>
+      </div>
+    </form>
+    
+    <!-- Debug form for direct testing -->
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc;">
+      <h3>Alternative Upload Form (For Testing)</h3>
+      <form action="/tidy-feedback/debug-file-upload-handler" method="post" enctype="multipart/form-data">
+        <div style="margin-bottom: 15px;">
+          <label for="test_file" style="display: block; margin-bottom: 5px;">Test File Upload:</label>
+          <input type="file" id="test_file" name="test_file">
+        </div>
+        <button type="submit" style="background: #0071b8; color: white; border: none; padding: 8px 15px; cursor: pointer;">Test Upload</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Set browser info display for debugging
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      var browserInfo = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        vendor: navigator.vendor,
+        language: navigator.language
+      };
+      document.getElementById('browser-info-display').textContent = browserInfo.userAgent;
+      
+      // Update hidden field too
+      document.getElementById('tidy-feedback-browser-info').value = JSON.stringify(browserInfo);
+    } catch (e) {
+      console.error('Error setting browser info:', e);
+    }
+    
+    // Monitor form submission
+    var form = document.getElementById('tidy-feedback-form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        var errorSection = document.getElementById('upload-errors');
+        errorSection.style.display = 'block';
+        errorSection.innerHTML = '<p>Form submission in progress...</p>';
+      });
+    }
+  });
+</script>
