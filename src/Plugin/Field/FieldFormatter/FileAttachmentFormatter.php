@@ -6,7 +6,6 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FormatterBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\file\Entity\File;
 
 /**
  * Plugin implementation of the 'file_attachment' formatter.
@@ -65,13 +64,13 @@ class FileAttachmentFormatter extends FormatterBase {
     foreach ($items as $delta => $item) {
       if (!empty($item->value)) {
         $uri = $item->value;
-        
+
         // Create the file URL.
         $url = file_create_url($uri);
-        
+
         // Get filename from the URI.
         $filename = basename($uri);
-        
+
         // Create a link to the file.
         $elements[$delta] = [
           '#type' => 'link',

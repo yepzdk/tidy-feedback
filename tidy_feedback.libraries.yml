@@ -22,4 +22,3 @@ tidy_feedback.admin:
   css:
     theme:
       css/tidy-feedback-admin.css: {}
-

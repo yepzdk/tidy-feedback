@@ -6,7 +6,6 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Form\FormBuilderInterface;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Core\Database\Connection;
@@ -62,7 +61,7 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
    * @var \Drupal\Core\Session\AccountProxyInterface
    */
   protected $currentUser;
-  
+
   /**
    * The file system service.
    *
@@ -93,7 +92,7 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     UuidInterface $uuid,
     LoggerChannelFactoryInterface $logger_factory,
     AccountProxyInterface $current_user,
-    FileSystemInterface $file_system
+    FileSystemInterface $file_system,
   ) {
     $this->formBuilder = $form_builder;
     $this->database = $database;
@@ -129,7 +128,7 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     try {
       // Log that we're attempting to get the form.
       $this->getLogger('tidy_feedback')->notice(
-        "Attempting to load feedback form"
+        'Attempting to load feedback form'
       );
 
       // Build the form.
@@ -143,14 +142,14 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
     catch (\Exception $e) {
       // Log the error.
       $this->getLogger('tidy_feedback')->error(
-        "Error loading feedback form: @error",
-        ["@error" => $e->getMessage()]
+        'Error loading feedback form: @error',
+        ['@error' => $e->getMessage()]
       );
 
       // Return a simple error message.
       return [
-        "#markup" => $this->t(
-          "Error loading feedback form. Please check the logs for details."
+        '#markup' => $this->t(
+          'Error loading feedback form. Please check the logs for details.'
         ),
       ];
     }
@@ -168,130 +167,130 @@ class TidyFeedbackFormController extends ControllerBase implements ContainerInje
   public function submitDirectFeedback(Request $request) {
     try {
       // Check for JSON content type.
-      $contentType = $request->headers->get("Content-Type");
-      if (strpos($contentType, "application/json") !== FALSE) {
+      $contentType = $request->headers->get('Content-Type');
+      if (strpos($contentType, 'application/json') !== FALSE) {
         $data = json_decode($request->getContent(), TRUE);
       }
       else {
         $data = $request->request->all();
       }
-      
-      // Log file upload if present
+
+      // Log file upload if present.
       $fileUpload = $request->files->get('file_attachment');
       if ($fileUpload) {
         $this->getLogger('tidy_feedback')->notice(
-          "File upload found: @filename, size: @size, error: @error",
+          'File upload found: @filename, size: @size, error: @error',
           [
-            "@filename" => $fileUpload->getClientOriginalName(),
-            "@size" => $fileUpload->getSize(),
-            "@error" => $fileUpload->getError()
+            '@filename' => $fileUpload->getClientOriginalName(),
+            '@size' => $fileUpload->getSize(),
+            '@error' => $fileUpload->getError(),
           ]
         );
       }
 
-      $this->getLogger('tidy_feedback')->notice("Received data: @data", [
-        "@data" => print_r($data, TRUE),
+      $this->getLogger('tidy_feedback')->notice('Received data: @data', [
+        '@data' => print_r($data, TRUE),
       ]);
 
       // Validate required fields.
-      if (empty($data["description"])) {
+      if (empty($data['description'])) {
         return new JsonResponse(
           [
-            "status" => "error",
-            "message" => "Description is required",
+            'status' => 'error',
+            'message' => 'Description is required',
           ],
           400
         );
       }
 
       // Process browser_info - it might be a JSON string that needs decoding.
-      $browserInfo = isset($data["browser_info"]) ? $data["browser_info"] : "";
+      $browserInfo = $data['browser_info'] ?? '';
       if (is_string($browserInfo) && !empty($browserInfo)) {
         // Check if it's already a JSON string and store as is.
         if (
-          substr($browserInfo, 0, 1) === "{" &&
+          substr($browserInfo, 0, 1) === '{' &&
           json_decode($browserInfo) !== NULL
         ) {
           // It's already valid JSON, keep as is.
         }
         else {
           // Convert to JSON if it's not already.
-          $browserInfo = json_encode(["raw_data" => $browserInfo]);
+          $browserInfo = json_encode(['raw_data' => $browserInfo]);
         }
       }
       else {
         // If empty or not a string, create an empty JSON object.
-        $browserInfo = "{}";
+        $browserInfo = '{}';
       }
 
-      $referer = $request->headers->get("referer");
-      $url = isset($data["url"]) ? $data["url"] : ($referer ?: '');
-      $issueType = isset($data["issue_type"]) ? $data["issue_type"] : "other";
-      $severity = isset($data["severity"]) ? $data["severity"] : "normal";
-      $elementSelector = isset($data["element_selector"]) ? $data["element_selector"] : "";
-      
-      // Handle file upload if present
+      $referer = $request->headers->get('referer');
+      $url = $data['url'] ?? ($referer ?: '');
+      $issueType = $data['issue_type'] ?? 'other';
+      $severity = $data['severity'] ?? 'normal';
+      $elementSelector = $data['element_selector'] ?? '';
+
+      // Handle file upload if present.
       $filePath = NULL;
       $fileUpload = $request->files->get('file_attachment');
       if ($fileUpload && $fileUpload->getError() == UPLOAD_ERR_OK) {
-        // Prepare directory
+        // Prepare directory.
         $directory = 'public://tidy_feedback/attachments';
         if (!$this->fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
           throw new \Exception('Could not prepare directory for file attachments.');
         }
-        
-        // Generate unique filename
+
+        // Generate unique filename.
         $timestamp = $this->time->getRequestTime();
         $filename = $timestamp . '_' . preg_replace('/[^a-zA-Z0-9\._-]/', '_', $fileUpload->getClientOriginalName());
         $destination = $directory . '/' . $filename;
-        
-        // Move the uploaded file
+
+        // Move the uploaded file.
         if (!$this->fileSystem->moveUploadedFile($fileUpload->getRealPath(), $destination)) {
           throw new \Exception('Could not save the uploaded file.');
         }
-        
+
         $filePath = $destination;
         $this->getLogger('tidy_feedback')->notice('File uploaded to @path', ['@path' => $filePath]);
       }
 
       // Insert into database.
       $id = $this->database
-        ->insert("tidy_feedback")
+        ->insert('tidy_feedback')
         ->fields([
-          "uuid" => $this->uuid->generate(),
-          "uid" => $this->currentUser->id(),
-          "created" => $this->time->getRequestTime(),
-          "changed" => $this->time->getRequestTime(),
-          "issue_type" => $issueType,
-          "severity" => $severity,
-          "description__value" => $data["description"],
-          "description__format" => "basic_html",
-          "url" => $url,
-          "element_selector" => $elementSelector,
-          "browser_info" => $browserInfo,
-          "status" => "new",
-          "file_attachment" => $filePath,
+          'uuid' => $this->uuid->generate(),
+          'uid' => $this->currentUser->id(),
+          'created' => $this->time->getRequestTime(),
+          'changed' => $this->time->getRequestTime(),
+          'issue_type' => $issueType,
+          'severity' => $severity,
+          'description__value' => $data['description'],
+          'description__format' => 'basic_html',
+          'url' => $url,
+          'element_selector' => $elementSelector,
+          'browser_info' => $browserInfo,
+          'status' => 'new',
+          'file_attachment' => $filePath,
         ])
         ->execute();
 
       $this->getLogger('tidy_feedback')->notice(
-        "Feedback #@id submitted successfully via direct controller.",
-        ["@id" => $id]
+        'Feedback #@id submitted successfully via direct controller.',
+        ['@id' => $id]
       );
 
       return new JsonResponse([
-        "status" => "success",
-        "message" => "Feedback submitted successfully",
-        "id" => $id,
+        'status' => 'success',
+        'message' => 'Feedback submitted successfully',
+        'id' => $id,
       ]);
     }
     catch (\Exception $e) {
       $this->getLogger('tidy_feedback')->error(
-        "Error saving feedback via direct controller: @error",
-        ["@error" => $e->getMessage()]
+        'Error saving feedback via direct controller: @error',
+        ['@error' => $e->getMessage()]
       );
       return new JsonResponse(
-        ["status" => "error", "message" => $e->getMessage()],
+        ['status' => 'error', 'message' => $e->getMessage()],
         500
       );
     }

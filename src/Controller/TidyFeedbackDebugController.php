@@ -38,7 +38,7 @@ class TidyFeedbackDebugController extends ControllerBase implements ContainerInj
    */
   public function __construct(
     Connection $database,
-    FileSystemInterface $file_system
+    FileSystemInterface $file_system,
   ) {
     $this->database = $database;
     $this->fileSystem = $file_system;
@@ -61,20 +61,20 @@ class TidyFeedbackDebugController extends ControllerBase implements ContainerInj
    *   A render array.
    */
   public function debugInfo() {
-    // Check if user has permission
+    // Check if user has permission.
     if (!$this->currentUser()->hasPermission('administer tidy feedback')) {
       return [
         '#markup' => $this->t('Access denied. You do not have permission to view this page.'),
       ];
     }
 
-    // Get all feedback entries
+    // Get all feedback entries.
     $query = $this->database->select('tidy_feedback', 'tf')
       ->fields('tf')
       ->orderBy('id', 'DESC');
     $result = $query->execute()->fetchAll();
 
-    // Build table
+    // Build table.
     $rows = [];
     foreach ($result as $record) {
       $file_link = '';
@@ -82,12 +82,12 @@ class TidyFeedbackDebugController extends ControllerBase implements ContainerInj
         $file_url = file_create_url($record->file_attachment);
         $filename = basename($record->file_attachment);
         $file_link = '<a href="' . $file_url . '" target="_blank">' . $filename . '</a>';
-        
-        // Check if file exists
+
+        // Check if file exists.
         $file_exists = file_exists($this->fileSystem->realpath($record->file_attachment));
         $file_link .= ' (' . ($file_exists ? 'File exists' : 'File missing') . ')';
       }
-      
+
       $rows[] = [
         'id' => $record->id,
         'created' => date('Y-m-d H:i:s', $record->created),
@@ -97,7 +97,7 @@ class TidyFeedbackDebugController extends ControllerBase implements ContainerInj
       ];
     }
 
-    // Check folder permissions
+    // Check folder permissions.
     $directory = 'public://tidy_feedback/attachments';
     $directory_info = '';
     if ($this->fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY)) {
@@ -108,11 +108,12 @@ class TidyFeedbackDebugController extends ControllerBase implements ContainerInj
         '@realpath' => $realpath,
         '@writable' => $is_writable ? 'Yes' : 'No',
       ]);
-    } else {
+    }
+    else {
       $directory_info = $this->t('Directory @dir does not exist or is not writable', ['@dir' => $directory]);
     }
 
-    // Check PHP configuration
+    // Check PHP configuration.
     $build = [
       '#theme' => 'item_list',
       '#title' => $this->t('Debug Information'),
@@ -125,7 +126,7 @@ class TidyFeedbackDebugController extends ControllerBase implements ContainerInj
       ],
     ];
 
-    // Add test upload form
+    // Add test upload form.
     $build['test_form'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Test File Upload'),
@@ -145,7 +146,7 @@ class TidyFeedbackDebugController extends ControllerBase implements ContainerInj
       ],
     ];
 
-    // Add table of entries
+    // Add table of entries.
     $build['table'] = [
       '#type' => 'table',
       '#header' => [
@@ -166,60 +167,66 @@ class TidyFeedbackDebugController extends ControllerBase implements ContainerInj
    * Handle test upload.
    */
   public function handleTestUpload() {
-    // Check if user has permission
+    // Check if user has permission.
     if (!$this->currentUser()->hasPermission('administer tidy feedback')) {
       return new Response('Access denied', 403);
     }
 
     $output = '<h1>File Upload Test Result</h1>';
 
-    // Process uploaded file
+    // Process uploaded file.
     $file = $_FILES['test_file'] ?? NULL;
     if ($file && $file['error'] == UPLOAD_ERR_OK) {
       $output .= '<h2>Upload Information</h2>';
       $output .= '<pre>' . print_r($file, TRUE) . '</pre>';
 
-      // Attempt to save the file
+      // Attempt to save the file.
       $directory = 'public://tidy_feedback/attachments';
       if ($this->fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY)) {
         $filename = basename($file['name']);
         $destination = $directory . '/' . $filename;
-        
+
         $output .= '<h2>Saving File</h2>';
         $output .= "<p>Source: {$file['tmp_name']}</p>";
         $output .= "<p>Destination: $destination</p>";
 
-        // Try method 1: move_uploaded_file
+        // Try method 1: move_uploaded_file.
         if (move_uploaded_file($file['tmp_name'], $this->fileSystem->realpath($destination))) {
           $output .= '<p style="color: green;">File uploaded successfully using move_uploaded_file()</p>';
-        } else {
+        }
+        else {
           $output .= '<p style="color: red;">Failed to upload file using move_uploaded_file()</p>';
-          
-          // Try method 2: file_save_data
+
+          // Try method 2: file_save_data.
           $contents = file_get_contents($file['tmp_name']);
           if ($contents !== FALSE) {
             $uri = $this->fileSystem->saveData($contents, $destination, FileSystemInterface::EXISTS_REPLACE);
             if ($uri) {
               $output .= '<p style="color: green;">File uploaded successfully using saveData()</p>';
-            } else {
+            }
+            else {
               $output .= '<p style="color: red;">Failed to upload file using saveData()</p>';
             }
-          } else {
+          }
+          else {
             $output .= '<p style="color: red;">Failed to read file contents</p>';
           }
         }
-        
-        // Check if file exists at destination
+
+        // Check if file exists at destination.
         if (file_exists($this->fileSystem->realpath($destination))) {
           $output .= '<p style="color: green;">File exists at destination</p>';
           $output .= '<p>File URL: <a href="' . file_create_url($destination) . '" target="_blank">' . file_create_url($destination) . '</a></p>';
-        } else {
+        }
+        else {
           $output .= '<p style="color: red;">File does not exist at destination</p>';
         }
-      } else {
+      }
+      else {
         $output .= '<p style="color: red;">Could not prepare directory: ' . $directory . '</p>';
       }
-    } else {
+    }
+    else {
       $error = $file ? $file['error'] : 'No file uploaded';
       $output .= '<p style="color: red;">Error: ' . $error . '</p>';
     }
@@ -228,4 +235,5 @@ class TidyFeedbackDebugController extends ControllerBase implements ContainerInj
 
     return new Response($output);
   }
+
 }
