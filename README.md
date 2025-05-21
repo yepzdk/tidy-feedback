@@ -2,7 +2,9 @@
 
 ## INTRODUCTION
 
-Tidy Feedback is a Drupal module that allows users to provide feedback on specific elements of a website. It's designed for testers and content reviewers to easily highlight and comment on parts of the site that need improvement.
+Tidy Feedback is a Drupal module that allows users to provide feedback on specific elements of a website.
+It's designed for testers and content reviewers to easily highlight and comment
+on parts of the site that need improvement.
 
 ## REQUIREMENTS
 
