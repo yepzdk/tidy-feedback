@@ -53,6 +53,12 @@ function tidy_feedback_form_alter(&$form, FormStateInterface $form_state, $form_
       $form['#attributes']['enctype'] = 'multipart/form-data';
     }
   }
+  
+  // Add admin styles to edit form
+  if ($form_id === 'tidy_feedback_edit_form') {
+    $form['#attached']['library'][] = 'tidy_feedback/tidy_feedback.admin';
+    $form['#attributes']['class'][] = 'tidy-feedback-form';
+  }
 }
 
 /**

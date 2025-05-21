@@ -164,6 +164,30 @@ public function createUser(string $username, string $email): UserInterface {
 - Organize code by functionality and type
 - Use namespaces that reflect the directory structure
 
+## File Attachments
+
+- File attachments are supported for feedback entities
+- When displaying file attachments in forms (especially edit forms):
+  - Simply provide a link to open the file in a new tab
+  - Detect image files using their extension (jpg, jpeg, png, gif)
+  - Use `\Drupal::service('file_url_generator')->generateAbsoluteString($file_uri)` 
+    to generate proper URLs for files
+  - Avoid using deprecated functions like `file_create_url()`
+  - Keep the implementation simple - complex image manipulation is unnecessary
+
+```php
+// Example of displaying a file attachment link
+if (!empty($file_uri)) {
+  $url = \Drupal::service('file_url_generator')->generateAbsoluteString($file_uri);
+  $filename = basename($file_uri);
+  
+  $form['file_attachment']['#prefix'] = '<div class="attachment-preview">' .
+    '<p>' . $this->t('File attachment: <a href="@url" target="_blank">@filename</a>', 
+      ['@url' => $url, '@filename' => $filename]) . '</p>' .
+    '</div>';
+}
+```
+
 ## Final Notes
 
 - Write code for readability and maintainability
