@@ -7,7 +7,7 @@ When you click on the banner you enable the feedback feature, you can hover over
 The information gathered should be collected in a view, you can access from the drupal administration.
 This project should be structured so it is easy to maintain both the frontend and the logic.
 
-# Drupal Feedback Module Design Plan
+## Drupal Feedback Module Design Plan
 
 ## Overview
 
@@ -15,7 +15,7 @@ Your Drupal module for gathering user feedback sounds like an excellent tool for
 
 ## Module Structure
 
-```
+```text
 feedback_module/
 ├── feedback_module.info.yml
 ├── feedback_module.module
@@ -100,12 +100,12 @@ feedback_module/
     attach: function (context, settings) {
       const feedbackBanner = $('.feedback-banner', context);
       let feedbackModeActive = false;
-      
+
       feedbackBanner.once('feedback-behavior').click(function() {
         feedbackModeActive = !feedbackModeActive;
         $(this).toggleClass('active', feedbackModeActive);
         $('body').toggleClass('feedback-mode', feedbackModeActive);
-        
+
         if (feedbackModeActive) {
           // Enable element highlighting
           $('body').on('mousemove.feedback', highlightElement);
@@ -116,30 +116,30 @@ feedback_module/
           $('.feedback-highlight').remove();
         }
       });
-      
+
       function highlightElement(e) {
         const target = $(e.target);
         // Skip feedback UI elements
         if (target.closest('.feedback-ui').length) return;
-        
+
         // Create or update horizontal and vertical guide lines
         updateGuidelines(target);
       }
-      
+
       function openFeedbackModal(e) {
         if ($(e.target).closest('.feedback-ui').length) return;
         e.preventDefault();
         e.stopPropagation();
-        
+
         // Get element path for identification
         const elementPath = getElementPath(e.target);
-        
+
         // Open modal with form
         Drupal.dialog('#feedback-modal', {
           width: '500px',
           title: Drupal.t('Submit Feedback')
         }).showModal();
-        
+
         // Set hidden field value
         $('#feedback-element-selector').val(elementPath);
       }
@@ -148,7 +148,7 @@ feedback_module/
 })(jQuery, Drupal);
 ```
 
-### Backend (PHP)
+## Backend (PHP)
 
 ```php
 <?php
@@ -160,14 +160,14 @@ use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class FeedbackController extends ControllerBase {
-  
+
   /**
    * Saves feedback submission from the form.
    */
   public function saveFeedback() {
     // Get form data
     $data = \Drupal::request()->request->all();
-    
+
     // Create new feedback entity
     $feedback = \Drupal\feedback_module\Entity\Feedback::create([
       'type' => 'feedback',
@@ -181,9 +181,9 @@ class FeedbackController extends ControllerBase {
       'field_browser_info' => $data['browser_info'],
       'field_status' => 'new',
     ]);
-    
+
     $feedback->save();
-    
+
     return new JsonResponse(['status' => 'success', 'message' => 'Feedback submitted']);
   }
 }
@@ -211,11 +211,11 @@ For context I am calling it tidy_feedback instead of feedback_module. I have cha
 
 What goes into all the other files?
 
-# Complete File Structure for Tidy Feedback Module
+## Complete File Structure for Tidy Feedback Module
 
 I'll provide the content for each file in your `tidy_feedback` module structure. These are comprehensive implementations that you can modify as needed.
 
-## tidy_feedback.info.yml
+### tidy_feedback.info.yml
 
 ```yaml
 name: Tidy Feedback
@@ -229,7 +229,7 @@ dependencies:
   - drupal:field
 ```
 
-## tidy_feedback.module
+### tidy_feedback.module
 
 ```php
 <?php
@@ -281,11 +281,11 @@ function tidy_feedback_theme($existing, $type, $theme, $path) {
  */
 function tidy_feedback_page_attachments(array &$attachments) {
   $current_user = \Drupal::currentUser();
-  
+
   // Only add for users with permission.
   if ($current_user->hasPermission('access tidy feedback')) {
     $attachments['#attached']['library'][] = 'tidy_feedback/tidy_feedback';
-    
+
     // Pass module settings to JavaScript.
     $config = \Drupal::config('tidy_feedback.settings');
     $attachments['#attached']['drupalSettings']['tidyFeedback'] = [
@@ -305,7 +305,7 @@ function tidy_feedback_form_alter(&$form, FormStateInterface $form_state, $form_
 }
 ```
 
-## tidy_feedback.install
+### tidy_feedback.install
 
 ```php
 <?php
@@ -418,13 +418,13 @@ function tidy_feedback_install() {
 function tidy_feedback_uninstall() {
   // Delete the view created during installation.
   \Drupal::configFactory()->getEditable('views.view.tidy_feedback_list')->delete();
-  
+
   // Delete configuration
   \Drupal::configFactory()->getEditable('tidy_feedback.settings')->delete();
 }
 ```
 
-## tidy_feedback.libraries.yml
+### tidy_feedback.libraries.yml
 
 ```yaml
 tidy_feedback:
@@ -455,7 +455,7 @@ tidy_feedback_form:
     - core/drupal
 ```
 
-## tidy_feedback.routing.yml
+### tidy_feedback.routing.yml
 
 ```yaml
 tidy_feedback.settings:
@@ -486,7 +486,7 @@ tidy_feedback.admin:
     _permission: 'view tidy feedback reports'
 ```
 
-## tidy_feedback.permissions.yml
+### tidy_feedback.permissions.yml
 
 ```yaml
 access tidy feedback:
@@ -503,7 +503,7 @@ view tidy feedback reports:
   description: 'Allow users to view feedback reports and submissions.'
 ```
 
-## src/Controller/FeedbackController.php
+### src/Controller/FeedbackController.php
 
 ```php
 <?php
@@ -521,23 +521,23 @@ use Drupal\user\Entity\User;
  * Controller for handling feedback operations.
  */
 class TidyFeedbackController extends ControllerBase {
-  
+
   /**
    * Saves feedback submission from the form.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The request object.
-   * 
+   *
    * @return \Symfony\Component\HttpFoundation\JsonResponse
    *   JSON response indicating success or failure.
    */
   public function saveFeedback(Request $request) {
     $data = json_decode($request->getContent(), TRUE);
-    
+
     if (empty($data)) {
       return new JsonResponse(['status' => 'error', 'message' => 'Invalid data submitted'], 400);
     }
-    
+
     try {
       $connection = \Drupal::database();
       $connection->insert('tidy_feedback')
@@ -553,14 +553,14 @@ class TidyFeedbackController extends ControllerBase {
           'status' => 'new',
         ])
         ->execute();
-      
+
       return new JsonResponse(['status' => 'success', 'message' => $this->t('Feedback submitted successfully')]);
     }
     catch (\Exception $e) {
       return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], 500);
     }
   }
-  
+
   /**
    * Overview page for the admin interface.
    *
@@ -571,17 +571,17 @@ class TidyFeedbackController extends ControllerBase {
     // This is a basic controller method that just redirects to the View
     // we'll create for displaying feedback items. In a more complex scenario,
     // you might add summary statistics here.
-    
+
     $build = [
       '#markup' => $this->t('The Tidy Feedback administration interface is provided by a View. If you do not see it below, please ensure the View is properly configured.'),
     ];
-    
+
     // Embed the view in the page
     $view = views_embed_view('tidy_feedback_list', 'default');
     if ($view) {
       $build['view'] = $view;
     }
-    
+
     return $build;
   }
 }
@@ -605,21 +605,21 @@ use Drupal\Core\Ajax\InvokeCommand;
  * Provides a form for submitting feedback.
  */
 class TidyFeedbackForm extends FormBase {
-  
+
   /**
    * {@inheritdoc}
    */
   public function getFormId() {
     return 'tidy_feedback_form';
   }
-  
+
   /**
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form['#prefix'] = '<div id="tidy-feedback-form-wrapper">';
     $form['#suffix'] = '</div>';
-    
+
     $form['issue_type'] = [
       '#type' => 'select',
       '#title' => $this->t('Issue Type'),
@@ -631,7 +631,7 @@ class TidyFeedbackForm extends FormBase {
       ],
       '#required' => TRUE,
     ];
-    
+
     $form['severity'] = [
       '#type' => 'select',
       '#title' => $this->t('Severity'),
@@ -644,7 +644,7 @@ class TidyFeedbackForm extends FormBase {
       '#default_value' => 'normal',
       '#required' => TRUE,
     ];
-    
+
     $form['description'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Description'),
@@ -652,23 +652,23 @@ class TidyFeedbackForm extends FormBase {
       '#rows' => 5,
       '#required' => TRUE,
     ];
-    
+
     // Hidden fields to store element information
     $form['url'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-url'],
     ];
-    
+
     $form['element_selector'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-element-selector'],
     ];
-    
+
     $form['browser_info'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-browser-info'],
     ];
-    
+
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit Feedback'),
@@ -682,7 +682,7 @@ class TidyFeedbackForm extends FormBase {
         ],
       ],
     ];
-    
+
     $form['cancel'] = [
       '#type' => 'button',
       '#value' => $this->t('Cancel'),
@@ -692,16 +692,16 @@ class TidyFeedbackForm extends FormBase {
         'wrapper' => 'tidy-feedback-form-wrapper',
       ],
     ];
-    
+
     return $form;
   }
-  
+
   /**
    * AJAX callback for form submission.
    */
   public function submitAjax(array &$form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
-    
+
     if ($form_state->getErrors()) {
       // Return the form with errors.
       $response->addCommand(new HtmlCommand('#tidy-feedback-form-wrapper', $form));
@@ -709,14 +709,14 @@ class TidyFeedbackForm extends FormBase {
     else {
       // Close the modal.
       $response->addCommand(new CloseModalDialogCommand());
-      
+
       // Show a success message.
       $response->addCommand(new InvokeCommand(NULL, 'tidyFeedbackSuccess'));
     }
-    
+
     return $response;
   }
-  
+
   /**
    * AJAX callback for cancel button.
    */
@@ -725,7 +725,7 @@ class TidyFeedbackForm extends FormBase {
     $response->addCommand(new CloseModalDialogCommand());
     return $response;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -733,13 +733,13 @@ class TidyFeedbackForm extends FormBase {
     // Basic validation is handled by #required attributes.
     // Add any custom validation here.
   }
-  
+
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
-    
+
     // Save the feedback to the database
     try {
       $connection = \Drupal::database();
@@ -756,7 +756,7 @@ class TidyFeedbackForm extends FormBase {
           'status' => 'new',
         ])
         ->execute();
-      
+
       \Drupal::messenger()->addStatus($this->t('Thank you for your feedback.'));
     }
     catch (\Exception $e) {
@@ -824,24 +824,24 @@ class TidyFeedbackSettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('highlight_color') ?: '#ff0000',
       '#description' => $this->t('Color for highlighting elements on the page.'),
     ];
-    
+
     $form['behavior'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Behavior Settings'),
     ];
-    
+
     $form['behavior']['enable_screenshots'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Enable screenshots'),
       '#default_value' => $config->get('enable_screenshots') ?: FALSE,
       '#description' => $this->t('Allow users to include screenshots with their feedback.'),
     ];
-    
+
     $form['email'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Notification Settings'),
     ];
-    
+
     $form['email']['notify_email'] = [
       '#type' => 'email',
       '#title' => $this->t('Notification Email'),
@@ -884,27 +884,27 @@ class TidyFeedbackSettingsForm extends ConfigFormBase {
       let feedbackModeActive = false;
       const bannerPosition = drupalSettings.tidyFeedback?.bannerPosition || 'right';
       const highlightColor = drupalSettings.tidyFeedback?.highlightColor || '#ff0000';
-      
+
       // Create the banner if it doesn't exist
       if (!$('.tidy-feedback-banner').length) {
         const banner = $('<div class="tidy-feedback-banner" role="button" tabindex="0"></div>')
           .attr('title', Drupal.t('Click to activate feedback mode'))
           .addClass(`position-${bannerPosition}`);
-        
+
         $('body').append(banner);
       }
-      
+
       // Create highlight guides if they don't exist
       if (!$('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').length) {
         $('body').append(
           $('<div class="tidy-feedback-guide-horizontal tidy-feedback-ui"></div>'),
           $('<div class="tidy-feedback-guide-vertical tidy-feedback-ui"></div>')
         );
-        
+
         // Apply highlight color from settings
         $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').css('border-color', highlightColor);
       }
-      
+
       // Handle banner toggle
       once('tidy-feedback', '.tidy-feedback-banner', context).forEach(function (banner) {
         $(banner).on('click keypress', function (e) {
@@ -912,42 +912,42 @@ class TidyFeedbackSettingsForm extends ConfigFormBase {
           if (e.type === 'keypress' && !(e.which === 13 || e.which === 32)) {
             return;
           }
-          
+
           toggleFeedbackMode();
         });
       });
-      
+
       // Function to toggle feedback mode
       function toggleFeedbackMode() {
         feedbackModeActive = !feedbackModeActive;
         $('.tidy-feedback-banner').toggleClass('active', feedbackModeActive);
         $('body').toggleClass('tidy-feedback-mode', feedbackModeActive);
-        
+
         if (feedbackModeActive) {
           // Update banner message
           $('.tidy-feedback-banner').attr('title', Drupal.t('Click to deactivate feedback mode'));
-          
+
           // Enable element highlighting
           $('body')
             .on('mousemove.tidy-feedback', handleMouseMove)
             .on('click.tidy-feedback', handleElementClick);
-          
+
           // Show guide lines
           $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').show();
         } else {
           // Update banner message
           $('.tidy-feedback-banner').attr('title', Drupal.t('Click to activate feedback mode'));
-          
+
           // Disable element highlighting
           $('body')
             .off('mousemove.tidy-feedback')
             .off('click.tidy-feedback');
-          
+
           // Hide guide lines
           $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
         }
       }
-      
+
       // Handle mouse movement for highlighting
       function handleMouseMove(e) {
         // Skip if we're hovering over a feedback UI element
@@ -955,73 +955,73 @@ class TidyFeedbackSettingsForm extends ConfigFormBase {
           $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
           return;
         }
-        
+
         // Get target element dimensions and position
         const $target = $(e.target);
         const offset = $target.offset();
         const width = $target.outerWidth();
         const height = $target.outerHeight();
-        
+
         // Position horizontal guide at the middle of the element
         $('.tidy-feedback-guide-horizontal').css({
           top: offset.top + (height / 2),
           display: 'block'
         });
-        
+
         // Position vertical guide at the middle of the element
         $('.tidy-feedback-guide-vertical').css({
           left: offset.left + (width / 2),
           display: 'block'
         });
       }
-      
+
       // Handle click on elements to open the feedback form
       function handleElementClick(e) {
         // Skip if we're clicking on a feedback UI element
         if ($(e.target).closest('.tidy-feedback-ui, .ui-dialog').length) {
           return;
         }
-        
+
         e.preventDefault();
         e.stopPropagation();
-        
+
         // Get element information
         const $target = $(e.target);
         const elementSelector = getElementSelector($target[0]);
-        
+
         // Open the feedback form in a modal
         openFeedbackModal(elementSelector);
       }
-      
+
       // Function to open feedback modal
       function openFeedbackModal(elementSelector) {
         // Check if modal already exists
         if (!$('#tidy-feedback-modal').length) {
           $('body').append('<div id="tidy-feedback-modal"></div>');
         }
-        
+
         // Load the form via AJAX
         $('#tidy-feedback-modal').html('<div class="ajax-progress"><div class="throbber"></div><div class="message">' + Drupal.t('Loading...') + '</div></div>');
-        
+
         // Create and open dialog
         Drupal.dialog('#tidy-feedback-modal', {
           title: Drupal.t('Submit Feedback'),
           width: '500px',
           dialogClass: 'tidy-feedback-ui'
         }).showModal();
-        
+
         // Load form content via AJAX
         $.ajax({
           url: Drupal.url('tidy-feedback/form'),
           type: 'GET',
           success: function(response) {
             $('#tidy-feedback-modal').html(response);
-            
+
             // Set hidden fields
             $('#tidy-feedback-url').val(window.location.href);
             $('#tidy-feedback-element-selector').val(elementSelector);
             $('#tidy-feedback-browser-info').val(getBrowserInfo());
-            
+
             // Attach behaviors to the new content
             Drupal.attachBehaviors('#tidy-feedback-modal');
           },
@@ -1029,20 +1029,20 @@ class TidyFeedbackSettingsForm extends ConfigFormBase {
             $('#tidy-feedback-modal').html('<p>' + Drupal.t('Error loading feedback form.') + '</p>');
           }
         });
-        
+
         // Turn off feedback mode
         toggleFeedbackMode();
       }
-      
+
       // Helper function to get a selector for the element
       function getElementSelector(element) {
         // This is a simplified version. A production version would use a more robust algorithm.
         let path = [];
         let current = element;
-        
+
         while (current && current !== document.body) {
           let selector = current.tagName.toLowerCase();
-          
+
           if (current.id) {
             selector += '#' + current.id;
             path.unshift(selector);
@@ -1053,7 +1053,7 @@ class TidyFeedbackSettingsForm extends ConfigFormBase {
               selector += '.' + classes.join('.');
             }
           }
-          
+
           // Add position among siblings if no ID
           if (!current.id) {
             const siblings = Array.from(current.parentNode.children).filter(c => c.tagName === current.tagName);
@@ -1062,14 +1062,14 @@ class TidyFeedbackSettingsForm extends ConfigFormBase {
               selector += `:nth-of-type(${index})`;
             }
           }
-          
+
           path.unshift(selector);
           current = current.parentNode;
         }
-        
+
         return path.join(' > ');
       }
-      
+
       // Helper function to get browser information
       function getBrowserInfo() {
         const ua = navigator.userAgent;
@@ -1081,21 +1081,21 @@ class TidyFeedbackSettingsForm extends ConfigFormBase {
           viewportHeight: window.innerHeight,
           devicePixelRatio: window.devicePixelRatio || 1
         };
-        
+
         return JSON.stringify(browserInfo);
       }
     }
   };
-  
+
   // Custom command for success message
   $.fn.tidyFeedbackSuccess = function() {
     Drupal.announce(Drupal.t('Feedback submitted successfully'));
-    
+
     // Show a floating success message
     const message = $('<div class="tidy-feedback-success-message"></div>')
       .text(Drupal.t('Feedback submitted successfully'))
       .appendTo('body');
-    
+
     // Remove message after 3 seconds
     setTimeout(function() {
       message.fadeOut(400, function() {
@@ -1121,7 +1121,7 @@ class TidyFeedbackSettingsForm extends ConfigFormBase {
     attach: function (context, settings) {
       // This file contains JavaScript specifically for the modal behavior
       // Most functionality is in the tidy-feedback-highlighter.js file
-      
+
       // Handle form submission
       once('tidy-feedback-form', '#tidy-feedback-form', context).forEach(function (form) {
         $(form).on('submit', function (e) {
@@ -1257,7 +1257,7 @@ body.tidy-feedback-mode .ui-dialog * {
     width: 30px;
     height: 120px;
   }
-  
+
   .tidy-feedback-banner::before {
     font-size: 14px;
   }
@@ -1338,7 +1338,7 @@ body:not(.tidy-feedback-mode) .tidy-feedback-element-label {
   .tidy-feedback-guide-vertical {
     border-width: 3px;
   }
-  
+
   .tidy-feedback-highlight {
     box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.8);
     background-color: rgba(255, 0, 0, 0.2);
@@ -1554,11 +1554,11 @@ body.tidy-feedback-mode *:hover:not(.tidy-feedback-ui):not(.ui-dialog *) {
     width: 95% !important;
     max-width: 95% !important;
   }
-  
+
   #tidy-feedback-form .form-actions {
     flex-direction: column;
   }
-  
+
   #tidy-feedback-form .form-actions button,
   #tidy-feedback-form .form-actions input[type="submit"] {
     width: 100%;
@@ -1581,16 +1581,16 @@ body.tidy-feedback-mode *:hover:not(.tidy-feedback-ui):not(.ui-dialog *) {
     background-color: #333;
     color: #fff;
   }
-  
+
   .ui-dialog.tidy-feedback-ui .ui-dialog-content {
     background-color: #333;
     color: #fff;
   }
-  
+
   #tidy-feedback-form label {
     color: #eee;
   }
-  
+
   #tidy-feedback-form input[type="text"],
   #tidy-feedback-form select,
   #tidy-feedback-form textarea {
@@ -1598,26 +1598,26 @@ body.tidy-feedback-mode *:hover:not(.tidy-feedback-ui):not(.ui-dialog *) {
     border-color: #555;
     color: #fff;
   }
-  
+
   #tidy-feedback-form .description {
     color: #ccc;
   }
-  
+
   #tidy-feedback-form button.button {
     background-color: #444;
     color: #eee;
     border-color: #555;
   }
-  
+
   #tidy-feedback-form button.button:hover {
     background-color: #555;
   }
-  
+
   #tidy-feedback-form fieldset {
     background-color: #3a3a3a;
     border-color: #555;
   }
-  
+
   .tidy-feedback-success {
     background-color: #1b5e20;
     color: #e8f5e9;
@@ -3844,7 +3844,7 @@ class FeedbackListBuilder extends EntityListBuilder {
     $row['created'] = $this->dateFormatter->format($entity->getCreatedTime(), 'short');
     $row['issue_type'] = $entity->getIssueType();
     $row['status'] = $entity->getStatus();
-    
+
     $url_value = $entity->getUrl();
     $url = $url_value ? Url::fromUri($url_value, ['attributes' => ['target' => '_blank']]) : NULL;
     $row['url'] = $url ? [
@@ -3854,7 +3854,7 @@ class FeedbackListBuilder extends EntityListBuilder {
         '#url' => $url,
       ],
     ] : '';
-    
+
     return $row + parent::buildRow($entity);
   }
 
@@ -3977,13 +3977,13 @@ class FeedbackEditForm extends ContentEntityForm {
       $form['url']['#disabled'] = TRUE;
     }
 
-    if (isset($form['element_selector'])) {
-      $form['element_selector']['#disabled'] = TRUE;
-    }
+  if (isset($form["element_selector"])) {
+    $form["element_selector"]["#disabled"] = true;
+  }
 
-    if (isset($form['browser_info'])) {
-      $form['browser_info']['#disabled'] = TRUE;
-    }
+  if (isset($form["browser_info"])) {
+    $form["browser_info"]["#disabled"] = true;
+  }
 
     return $form;
   }
@@ -4007,7 +4007,7 @@ class FeedbackEditForm extends ContentEntityForm {
           '%id' => $entity->id(),
         ]));
     }
-    
+
     $form_state->setRedirect('entity.tidy_feedback.collection');
   }
 
@@ -4076,7 +4076,7 @@ class FeedbackForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form['#prefix'] = '<div id="tidy-feedback-form-wrapper">';
     $form['#suffix'] = '</div>';
-    
+
     $form['issue_type'] = [
       '#type' => 'select',
       '#title' => $this->t('Issue Type'),
@@ -4088,7 +4088,7 @@ class FeedbackForm extends FormBase {
       ],
       '#required' => TRUE,
     ];
-    
+
     $form['severity'] = [
       '#type' => 'select',
       '#title' => $this->t('Severity'),
@@ -4101,7 +4101,7 @@ class FeedbackForm extends FormBase {
       '#default_value' => 'normal',
       '#required' => TRUE,
     ];
-    
+
     $form['description'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Description'),
@@ -4109,27 +4109,27 @@ class FeedbackForm extends FormBase {
       '#rows' => 5,
       '#required' => TRUE,
     ];
-    
+
     // Hidden fields to store element information
     $form['url'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-url'],
     ];
-    
+
     $form['element_selector'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-element-selector'],
     ];
-    
+
     $form['browser_info'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-browser-info'],
     ];
-    
+
     $form['actions'] = [
       '#type' => 'actions',
     ];
-    
+
     $form['actions']['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit Feedback'),
@@ -4143,7 +4143,7 @@ class FeedbackForm extends FormBase {
         ],
       ],
     ];
-    
+
     $form['actions']['cancel'] = [
       '#type' => 'button',
       '#value' => $this->t('Cancel'),
@@ -4153,16 +4153,16 @@ class FeedbackForm extends FormBase {
         'wrapper' => 'tidy-feedback-form-wrapper',
       ],
     ];
-    
+
     return $form;
   }
-  
+
   /**
    * AJAX callback for form submission.
    */
   public function submitAjax(array &$form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
-    
+
     if ($form_state->getErrors()) {
       // Return the form with errors.
       $response->addCommand(new HtmlCommand('#tidy-feedback-form-wrapper', $form));
@@ -4170,14 +4170,14 @@ class FeedbackForm extends FormBase {
     else {
       // Close the modal.
       $response->addCommand(new CloseModalDialogCommand());
-      
+
       // Show a success message.
       $response->addCommand(new InvokeCommand(NULL, 'tidyFeedbackSuccess'));
     }
-    
+
     return $response;
   }
-  
+
   /**
    * AJAX callback for cancel button.
    */
@@ -4186,7 +4186,7 @@ class FeedbackForm extends FormBase {
     $response->addCommand(new CloseModalDialogCommand());
     return $response;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -4194,12 +4194,12 @@ class FeedbackForm extends FormBase {
     if (empty($form_state->getValue('description'))) {
       $form_state->setErrorByName('description', $this->t('Description field is required.'));
     }
-    
+
     if (empty($form_state->getValue('url'))) {
       $form_state->setValue('url', \Drupal::request()->getUri());
     }
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -4216,9 +4216,9 @@ class FeedbackForm extends FormBase {
         'browser_info' => $form_state->getValue('browser_info'),
         'status' => 'new',
       ]);
-      
+
       $feedback->save();
-      
+
       $this->messenger()->addStatus($this->t('Thank you for your feedback.'));
     }
     catch (\Exception $e) {
@@ -4343,7 +4343,7 @@ Replace the current content with:
 function tidy_feedback_install() {
   // Set default permissions for the module.
   $roles = \Drupal::entityTypeManager()->getStorage('user_role')->loadMultiple();
-  
+
   // Allow administrators to access all functionality.
   if (isset($roles['administrator'])) {
     user_role_grant_permissions('administrator', [
@@ -4352,7 +4352,7 @@ function tidy_feedback_install() {
       'view tidy feedback reports',
     ]);
   }
-  
+
   \Drupal::messenger()->addStatus(t('Tidy Feedback module has been installed. Configure permissions to allow users to submit feedback.'));
 }
 
@@ -4592,7 +4592,7 @@ Sometimes Drupal can be sensitive to file naming case differences. Make sure the
 
   // Most modal functionality is handled by Drupal's dialog system
   // This file can be used for custom modal behaviors if needed
-  
+
 })(jQuery, Drupal);
 ```
 
@@ -4815,13 +4815,13 @@ public function getTitle($tidy_feedback) {
       once('tidy-feedback-form', '#tidy-feedback-form', context).forEach(function (form) {
         // Pre-fill browser info when form loads
         $('#tidy-feedback-browser-info').val(getBrowserInfo());
-        
+
         // Pre-fill URL if not already set
         if (!$('#tidy-feedback-url').val()) {
           $('#tidy-feedback-url').val(window.location.href);
         }
       });
-      
+
       // Helper function to get browser information
       function getBrowserInfo() {
         const ua = navigator.userAgent;
@@ -4833,7 +4833,7 @@ public function getTitle($tidy_feedback) {
           viewportHeight: window.innerHeight,
           devicePixelRatio: window.devicePixelRatio || 1
         };
-        
+
         return JSON.stringify(browserInfo);
       }
     }
@@ -4856,7 +4856,7 @@ public function getTitle($tidy_feedback) {
     attach: function (context, settings) {
       // Modal-specific behaviors
       // Most functionality is in tidy-feedback-highlighter.js
-      
+
       // Close modal on escape key
       $(document).once('tidy-feedback-modal-escape').on('keydown', function(e) {
         if (e.key === 'Escape' && $('.ui-dialog.tidy-feedback-ui').length) {
@@ -4885,7 +4885,7 @@ public function getTitle($tidy_feedback) {
 function tidy_feedback_install() {
   // Set default permissions for the module.
   $roles = \Drupal::entityTypeManager()->getStorage('user_role')->loadMultiple();
-  
+
   // Allow administrators to access all functionality.
   if (isset($roles['administrator'])) {
     user_role_grant_permissions('administrator', [
@@ -4894,7 +4894,7 @@ function tidy_feedback_install() {
       'view tidy feedback reports',
     ]);
   }
-  
+
   \Drupal::messenger()->addStatus(t('Tidy Feedback module has been installed. Configure permissions to allow users to submit feedback.'));
 }
 
@@ -5048,7 +5048,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
   try {
     // Get values
     $values = $form_state->getValues();
-    
+
     // Debug the issue - check if entity type exists
     try {
       $entity_type = \Drupal::entityTypeManager()->getDefinition('tidy_feedback');
@@ -5058,7 +5058,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
       \Drupal::logger('tidy_feedback')->error('Entity type validation error: @error', ['@error' => $e->getMessage()]);
       throw $e; // Re-throw to trigger the catch block below
     }
-    
+
     // Create a new feedback entity
     $feedback = $this->entityTypeManager->getStorage('tidy_feedback')->create([
       'uid' => $this->currentUser()->id(),
@@ -5070,9 +5070,9 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
       'browser_info' => $values['browser_info'],
       'status' => 'new',
     ]);
-    
+
     $feedback->save();
-    
+
     $this->messenger()->addStatus($this->t('Thank you for your feedback.'));
   }
   catch (\Exception $e) {
@@ -5184,11 +5184,11 @@ Then update your Controller to use database API instead of entity API:
 ```php
 public function saveFeedback(Request $request) {
   $data = json_decode($request->getContent(), TRUE);
-  
+
   if (empty($data)) {
     return new JsonResponse(['status' => 'error', 'message' => 'Invalid data submitted'], 400);
   }
-  
+
   try {
     $connection = \Drupal::database();
     $connection->insert('tidy_feedback')
@@ -5205,7 +5205,7 @@ public function saveFeedback(Request $request) {
         'status' => 'new',
       ])
       ->execute();
-    
+
     return new JsonResponse(['status' => 'success', 'message' => $this->t('Feedback submitted successfully')]);
   }
   catch (\Exception $e) {
@@ -6090,7 +6090,7 @@ function tidy_feedback_schema() {
 function tidy_feedback_install() {
   // Set default permissions for the module.
   $roles = \Drupal::entityTypeManager()->getStorage('user_role')->loadMultiple();
-  
+
   // Allow administrators to access all functionality.
   if (isset($roles['administrator'])) {
     user_role_grant_permissions('administrator', [
@@ -6099,7 +6099,7 @@ function tidy_feedback_install() {
       'view tidy feedback reports',
     ]);
   }
-  
+
   \Drupal::messenger()->addStatus(t('Tidy Feedback module has been installed. Configure permissions to allow users to submit feedback.'));
 }
 
@@ -6109,7 +6109,7 @@ function tidy_feedback_install() {
 function tidy_feedback_uninstall() {
   // Delete configuration
   \Drupal::configFactory()->getEditable('tidy_feedback.settings')->delete();
-  
+
   // Make sure we safely handle the table during uninstall
   try {
     $schema = \Drupal::database()->schema();
@@ -6308,7 +6308,7 @@ function drush_create_tidy_feedback_table() {
   ];
 
   $db = \Drupal::database();
-  
+
   // Drop the table if it exists
   try {
     $db->schema()->dropTable('tidy_feedback');
@@ -6316,7 +6316,7 @@ function drush_create_tidy_feedback_table() {
   } catch (\Exception $e) {
     drush_print("Table did not exist or could not be dropped: " . $e->getMessage());
   }
-  
+
   // Create the table
   try {
     $db->schema()->createTable('tidy_feedback', $schema);
@@ -6368,7 +6368,7 @@ If you just want to fix the uninstallation error without running a script, here'
 2. Manually run this SQL query to add an entry to the system schema table so Drupal knows about your module's schema:
 
    ```sql
-   INSERT INTO key_value (collection, name, value) 
+   INSERT INTO key_value (collection, name, value)
    VALUES ('system.schema', 'tidy_feedback', 'i:8000;')
    ON DUPLICATE KEY UPDATE value = 'i:8000;';
    ```
@@ -6517,7 +6517,7 @@ class FeedbackForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form['#prefix'] = '<div id="tidy-feedback-form-wrapper">';
     $form['#suffix'] = '</div>';
-    
+
     $form['issue_type'] = [
       '#type' => 'select',
       '#title' => $this->t('Issue Type'),
@@ -6529,7 +6529,7 @@ class FeedbackForm extends FormBase {
       ],
       '#required' => TRUE,
     ];
-    
+
     $form['severity'] = [
       '#type' => 'select',
       '#title' => $this->t('Severity'),
@@ -6542,7 +6542,7 @@ class FeedbackForm extends FormBase {
       '#default_value' => 'normal',
       '#required' => TRUE,
     ];
-    
+
     $form['description'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Description'),
@@ -6550,27 +6550,27 @@ class FeedbackForm extends FormBase {
       '#rows' => 5,
       '#required' => TRUE,
     ];
-    
+
     // Hidden fields to store element information
     $form['url'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-url'],
     ];
-    
+
     $form['element_selector'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-element-selector'],
     ];
-    
+
     $form['browser_info'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-browser-info'],
     ];
-    
+
     $form['actions'] = [
       '#type' => 'actions',
     ];
-    
+
     $form['actions']['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit Feedback'),
@@ -6584,7 +6584,7 @@ class FeedbackForm extends FormBase {
         ],
       ],
     ];
-    
+
     $form['actions']['cancel'] = [
       '#type' => 'button',
       '#value' => $this->t('Cancel'),
@@ -6594,16 +6594,16 @@ class FeedbackForm extends FormBase {
         'wrapper' => 'tidy-feedback-form-wrapper',
       ],
     ];
-    
+
     return $form;
   }
-  
+
   /**
    * AJAX callback for form submission.
    */
   public function submitAjax(array &$form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
-    
+
     if ($form_state->getErrors()) {
       // Return the form with errors.
       $response->addCommand(new HtmlCommand('#tidy-feedback-form-wrapper', $form));
@@ -6611,14 +6611,14 @@ class FeedbackForm extends FormBase {
     else {
       // Close the modal.
       $response->addCommand(new CloseModalDialogCommand());
-      
+
       // Show a success message.
       $response->addCommand(new InvokeCommand(NULL, 'tidyFeedbackSuccess'));
     }
-    
+
     return $response;
   }
-  
+
   /**
    * AJAX callback for cancel button.
    */
@@ -6627,7 +6627,7 @@ class FeedbackForm extends FormBase {
     $response->addCommand(new CloseModalDialogCommand());
     return $response;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -6635,12 +6635,12 @@ class FeedbackForm extends FormBase {
     if (empty($form_state->getValue('description'))) {
       $form_state->setErrorByName('description', $this->t('Description field is required.'));
     }
-    
+
     if (empty($form_state->getValue('url'))) {
       $form_state->setValue('url', \Drupal::request()->getUri());
     }
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -6648,7 +6648,7 @@ class FeedbackForm extends FormBase {
     try {
       // Get values
       $values = $form_state->getValues();
-      
+
       // Create a record in the database
       $connection = \Drupal::database();
       $id = $connection->insert('tidy_feedback')
@@ -6666,7 +6666,7 @@ class FeedbackForm extends FormBase {
           'status' => 'new',
         ])
         ->execute();
-      
+
       $this->messenger()->addStatus($this->t('Thank you for your feedback.'));
     }
     catch (\Exception $e) {
@@ -6689,17 +6689,17 @@ function openFeedbackModal(elementSelector) {
   if (!$('#tidy-feedback-modal').length) {
     $('body').append('<div id="tidy-feedback-modal"></div>');
   }
-  
+
   // Load the form via AJAX
   $('#tidy-feedback-modal').html('<div class="ajax-progress"><div class="throbber"></div><div class="message">' + Drupal.t('Loading...') + '</div></div>');
-  
+
   // Create and open dialog
   Drupal.dialog('#tidy-feedback-modal', {
     title: Drupal.t('Submit Feedback'),
     width: '500px',
     dialogClass: 'tidy-feedback-ui'
   }).showModal();
-  
+
   // Load form content via AJAX
   $.ajax({
     url: Drupal.url('tidy-feedback/form'),
@@ -6711,12 +6711,12 @@ function openFeedbackModal(elementSelector) {
         // Handle rendered array response
         $('#tidy-feedback-modal').html(response);
       }
-      
+
       // Set hidden fields
       $('#tidy-feedback-url').val(window.location.href);
       $('#tidy-feedback-element-selector').val(elementSelector);
       $('#tidy-feedback-browser-info').val(getBrowserInfo());
-      
+
       // Attach behaviors to the new content
       Drupal.attachBehaviors('#tidy-feedback-modal');
     },
@@ -6725,7 +6725,7 @@ function openFeedbackModal(elementSelector) {
       $('#tidy-feedback-modal').html('<p>' + Drupal.t('Error loading feedback form. Please try again later.') + '</p><p>' + Drupal.t('Error details: @error', {'@error': textStatus}) + '</p>');
     }
   });
-  
+
   // Turn off feedback mode
   toggleFeedbackMode();
 }
@@ -6808,21 +6808,21 @@ function openFeedbackModal(elementSelector) {
   if (!$('#tidy-feedback-modal').length) {
     $('body').append('<div id="tidy-feedback-modal"></div>');
   }
-  
+
   // Set form HTML
   $('#tidy-feedback-modal').html(formHtml);
-  
+
   // Create and open dialog
   var dialog = Drupal.dialog('#tidy-feedback-modal', {
     title: Drupal.t('Submit Feedback'),
     width: '500px',
     dialogClass: 'tidy-feedback-ui'
   }).showModal();
-  
+
   // Handle form submission
   $('#simple-feedback-form').on('submit', function(e) {
     e.preventDefault();
-    
+
     // Get form data
     var formData = {
       issue_type: $('#issue_type').val(),
@@ -6832,7 +6832,7 @@ function openFeedbackModal(elementSelector) {
       element_selector: $('#tidy-feedback-element-selector').val(),
       browser_info: $('#tidy-feedback-browser-info').val()
     };
-    
+
     // Submit via AJAX
     $.ajax({
       url: Drupal.url('tidy-feedback/submit'),
@@ -6853,13 +6853,13 @@ function openFeedbackModal(elementSelector) {
       }
     });
   });
-  
+
   // Handle cancel button
   $('#feedback-cancel').on('click', function(e) {
     e.preventDefault();
     dialog.close();
   });
-  
+
   // Turn off feedback mode
   toggleFeedbackMode();
 }
@@ -6870,11 +6870,11 @@ Make sure to update the TidyFeedbackController to properly process the JSON data
 ```php
 public function saveFeedback(Request $request) {
   $data = json_decode($request->getContent(), TRUE);
-  
+
   if (empty($data)) {
     return new JsonResponse(['status' => 'error', 'message' => 'Invalid data submitted'], 400);
   }
-  
+
   try {
     $connection = \Drupal::database();
     $connection->insert('tidy_feedback')
@@ -6892,7 +6892,7 @@ public function saveFeedback(Request $request) {
         'status' => 'new',
       ])
       ->execute();
-    
+
     return new JsonResponse(['status' => 'success', 'message' => $this->t('Feedback submitted successfully')]);
   }
   catch (\Exception $e) {
@@ -6967,11 +6967,11 @@ Add this to your tidy_feedback.module file to ensure the libraries are attached 
  */
 function tidy_feedback_page_attachments(array &$attachments) {
   $current_user = \Drupal::currentUser();
-  
+
   // Only add for users with permission.
   if ($current_user->hasPermission('access tidy feedback')) {
     $attachments['#attached']['library'][] = 'tidy_feedback/tidy_feedback';
-    
+
     // Debug message to console
     $attachments['#attached']['drupalSettings']['tidyFeedback']['debug'] = 'Banner should be visible';
   }
@@ -6994,22 +6994,22 @@ Make sure your JavaScript file is properly creating the banner:
     attach: function (context, settings) {
       // Debug message to verify the JS is loading
       console.log('Tidy Feedback JS loaded');
-      
+
       // Initialize variables
       let feedbackModeActive = false;
       const bannerPosition = drupalSettings.tidyFeedback?.bannerPosition || 'right';
       const highlightColor = drupalSettings.tidyFeedback?.highlightColor || '#ff0000';
-      
+
       // Create the banner if it doesn't exist
       if ($('.tidy-feedback-banner').length === 0) {
         console.log('Creating feedback banner');
         const banner = $('<div class="tidy-feedback-banner" role="button" tabindex="0">Feedback</div>')
           .attr('title', Drupal.t('Click to activate feedback mode'))
           .addClass(`position-${bannerPosition}`);
-        
+
         $('body').append(banner);
       }
-      
+
       // Rest of your JavaScript implementation...
     }
   };
@@ -7145,15 +7145,15 @@ function tidy_feedback_preprocess_html(&$variables) {
   if (\Drupal::currentUser()->hasPermission('access tidy feedback')) {
     $config = \Drupal::config('tidy_feedback.settings');
     $position = $config->get('banner_position') ?: 'right';
-    
+
     $banner = [
       '#theme' => 'tidy_feedback_banner',
       '#position' => $position,
     ];
-    
+
     // Add it to page bottom
     $variables['page_bottom']['tidy_feedback_banner'] = $banner;
-    
+
     // Attach the library
     $variables['#attached']['library'][] = 'tidy_feedback/tidy_feedback';
   }
@@ -7274,19 +7274,19 @@ $schema = $db->schema();
 // Check if the table exists
 if ($schema->tableExists('tidy_feedback')) {
   echo "Table exists, updating schema...\n";
-  
+
   // Backup existing data
   $existing_data = $db->select('tidy_feedback', 't')
     ->fields('t')
     ->execute()
     ->fetchAll(\PDO::FETCH_ASSOC);
-  
+
   echo "Backed up " . count($existing_data) . " records.\n";
-  
+
   // Drop the table
   $schema->dropTable('tidy_feedback');
   echo "Dropped existing table.\n";
-  
+
   // Create new table with correct schema
   $table_schema = [
     'description' => 'Stores feedback submissions.',
@@ -7393,10 +7393,10 @@ if ($schema->tableExists('tidy_feedback')) {
       'status' => ['status'],
     ],
   ];
-  
+
   $schema->createTable('tidy_feedback', $table_schema);
   echo "Created new table with updated schema.\n";
-  
+
   // Restore data with proper field mapping
   if (!empty($existing_data)) {
     foreach ($existing_data as $record) {
@@ -7417,7 +7417,7 @@ if ($schema->tableExists('tidy_feedback')) {
         'admin_comments__value' => isset($record['admin_comments']) ? $record['admin_comments'] : '',
         'admin_comments__format' => 'basic_html',
       ];
-      
+
       $db->insert('tidy_feedback')
         ->fields($new_record)
         ->execute();
@@ -7532,7 +7532,7 @@ if ($schema->tableExists('tidy_feedback')) {
       'status' => ['status'],
     ],
   ];
-  
+
   $schema->createTable('tidy_feedback', $table_schema);
   echo "Created new table with correct schema.\n";
 }
@@ -7560,7 +7560,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
   try {
     // Get values
     $values = $form_state->getValues();
-    
+
     // Create a record in the database
     $connection = \Drupal::database();
     $id = $connection->insert('tidy_feedback')
@@ -7579,7 +7579,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
         'status' => 'new',
       ])
       ->execute();
-    
+
     $this->messenger()->addStatus($this->t('Thank you for your feedback.'));
   }
   catch (\Exception $e) {
@@ -7594,11 +7594,11 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 ```php
 public function saveFeedback(Request $request) {
   $data = json_decode($request->getContent(), TRUE);
-  
+
   if (empty($data)) {
     return new JsonResponse(['status' => 'error', 'message' => 'Invalid data submitted'], 400);
   }
-  
+
   try {
     $connection = \Drupal::database();
     $connection->insert('tidy_feedback')
@@ -7617,7 +7617,7 @@ public function saveFeedback(Request $request) {
         'status' => 'new',
       ])
       ->execute();
-    
+
     return new JsonResponse(['status' => 'success', 'message' => $this->t('Feedback submitted successfully')]);
   }
   catch (\Exception $e) {
@@ -7931,8 +7931,8 @@ After making these changes, clear the Drupal cache and try accessing the feedbac
     ->setDisplayConfigurable('view', TRUE);
 
     I dont see that the field name has changed?
-    
-    What file does "## 7. Fix the getter methods in the Feedback entity" reffer to? 
+
+    What file does "## 7. Fix the getter methods in the Feedback entity" reffer to?
 
 You're right, and I apologize for the confusion. Let me clarify:
 
@@ -8011,27 +8011,27 @@ try {
   $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod');
   $kernel->boot();
   $kernel->preHandle($request);
-  
+
   // Get the database service
   $db = \Drupal::database();
   $schema = $db->schema();
-  
+
   // Check if the table exists
   if ($schema->tableExists('tidy_feedback')) {
     echo "Table exists, updating schema...\n";
-    
+
     // Backup existing data
     $existing_data = $db->select('tidy_feedback', 't')
       ->fields('t')
       ->execute()
       ->fetchAll(\PDO::FETCH_ASSOC);
-    
+
     echo "Backed up " . count($existing_data) . " records.\n";
-    
+
     // Drop the table
     $schema->dropTable('tidy_feedback');
     echo "Dropped existing table.\n";
-    
+
     // Create new table with correct schema
     $table_schema = [
       'description' => 'Stores feedback submissions.',
@@ -8138,10 +8138,10 @@ try {
         'status' => ['status'],
       ],
     ];
-    
+
     $schema->createTable('tidy_feedback', $table_schema);
     echo "Created new table with updated schema.\n";
-    
+
     // Restore data with proper field mapping
     if (!empty($existing_data)) {
       foreach ($existing_data as $record) {
@@ -8162,7 +8162,7 @@ try {
           'admin_comments__value' => isset($record['admin_comments']) ? $record['admin_comments'] : '',
           'admin_comments__format' => 'basic_html',
         ];
-        
+
         $db->insert('tidy_feedback')
           ->fields($new_record)
           ->execute();
@@ -8277,13 +8277,13 @@ try {
         'status' => ['status'],
       ],
     ];
-    
+
     $schema->createTable('tidy_feedback', $table_schema);
     echo "Created new table with correct schema.\n";
   }
-  
+
   echo "Schema update complete.\n";
-  
+
 } catch (Exception $e) {
   echo "Error: " . $e->getMessage() . "\n";
   exit(1);
@@ -8308,36 +8308,36 @@ If you have Drush installed, you can use a much simpler approach:
 function drush_update_tidy_feedback_schema() {
   // Get the database connection
   $db = \Drupal::database();
-  
+
   // Check if table exists
   if (!$db->schema()->tableExists('tidy_feedback')) {
     drush_print('Table does not exist. Nothing to update.');
     return;
   }
-  
+
   // Backup existing data
   $result = $db->select('tidy_feedback', 't')
     ->fields('t')
     ->execute();
-  
+
   $rows = [];
   foreach ($result as $row) {
     $rows[] = (array) $row;
   }
-  
+
   drush_print('Backed up ' . count($rows) . ' records.');
-  
+
   // Drop existing table
   $db->schema()->dropTable('tidy_feedback');
-  
+
   // Create new table with correct schema
   $schema = [
     // (Include your schema definition here)
   ];
-  
+
   $db->schema()->createTable('tidy_feedback', $schema);
   drush_print('Created new table with updated schema.');
-  
+
   // Restore data
   foreach ($rows as $row) {
     $db->insert('tidy_feedback')
@@ -8360,7 +8360,7 @@ function drush_update_tidy_feedback_schema() {
       ])
       ->execute();
   }
-  
+
   drush_print('Restored ' . count($rows) . ' records with updated schema.');
   drush_print('Schema update complete.');
 }
@@ -8416,21 +8416,21 @@ CREATE TABLE `tidy_feedback` (
 
 ```sql
 INSERT INTO tidy_feedback (id, uuid, uid, created, changed, issue_type, severity, description__value, description__format, url, element_selector, browser_info, status, admin_comments__value, admin_comments__format)
-SELECT id, 
-  COALESCE(uuid, UUID()), 
-  uid, 
-  created, 
-  COALESCE(changed, created), 
-  issue_type, 
-  severity, 
-  description, 
-  'basic_html', 
-  url, 
-  element_selector, 
-  browser_info, 
-  status, 
-  admin_comments, 
-  'basic_html' 
+SELECT id,
+  COALESCE(uuid, UUID()),
+  uid,
+  created,
+  COALESCE(changed, created),
+  issue_type,
+  severity,
+  description,
+  'basic_html',
+  url,
+  element_selector,
+  browser_info,
+  status,
+  admin_comments,
+  'basic_html'
 FROM tidy_feedback_backup;
 ```
 
@@ -8602,23 +8602,23 @@ use Drupal\user\Entity\User;
  * Controller for handling feedback operations.
  */
 class TidyFeedbackController extends ControllerBase {
-  
+
   /**
    * Saves feedback submission from the form.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The request object.
-   * 
+   *
    * @return \Symfony\Component\HttpFoundation\JsonResponse
    *   JSON response indicating success or failure.
    */
   public function saveFeedback(Request $request) {
     $data = json_decode($request->getContent(), TRUE);
-    
+
     if (empty($data)) {
       return new JsonResponse(['status' => 'error', 'message' => 'Invalid data submitted'], 400);
     }
-    
+
     try {
       $connection = \Drupal::database();
       $connection->insert('tidy_feedback')
@@ -8637,7 +8637,7 @@ class TidyFeedbackController extends ControllerBase {
           'status' => 'new',
         ])
         ->execute();
-      
+
       return new JsonResponse(['status' => 'success', 'message' => $this->t('Feedback submitted successfully')]);
     }
     catch (\Exception $e) {
@@ -8645,7 +8645,7 @@ class TidyFeedbackController extends ControllerBase {
       return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], 500);
     }
   }
-  
+
   /**
    * Overview page for the admin interface.
    *
@@ -8655,17 +8655,17 @@ class TidyFeedbackController extends ControllerBase {
   public function adminOverview() {
     // This is a basic controller method that just redirects to the View
     // we'll create for displaying feedback items.
-    
+
     $build = [
       '#markup' => $this->t('The Tidy Feedback administration interface is provided by a View. If you do not see it below, please ensure the View is properly configured.'),
     ];
-    
+
     // Embed the view in the page
     $view = views_embed_view('tidy_feedback_list', 'default');
     if ($view) {
       $build['view'] = $view;
     }
-    
+
     return $build;
   }
 
@@ -8776,17 +8776,17 @@ use Symfony\Component\HttpFoundation\Request;
  * Simple direct controller for handling feedback.
  */
 class DirectController {
-  
+
   /**
    * Saves feedback submission.
    */
   public static function saveFeedback(Request $request) {
     $data = json_decode($request->getContent(), TRUE);
-    
+
     if (empty($data)) {
       return new JsonResponse(['status' => 'error', 'message' => 'Invalid data submitted'], 400);
     }
-    
+
     try {
       $connection = \Drupal::database();
       $connection->insert('tidy_feedback')
@@ -8805,7 +8805,7 @@ class DirectController {
           'status' => 'new',
         ])
         ->execute();
-      
+
       return new JsonResponse(['status' => 'success', 'message' => 'Feedback submitted successfully']);
     }
     catch (\Exception $e) {
@@ -8907,17 +8907,17 @@ class TidyFeedbackFormController extends ControllerBase {
     try {
       // Log that we're attempting to get the form
       \Drupal::logger('tidy_feedback')->notice('Attempting to load feedback form');
-      
+
       // Build the form
       $form = $this->formBuilder->getForm('Drupal\tidy_feedback\Form\FeedbackForm');
-      
+
       // Return as a render array
       return $form;
     }
     catch (\Exception $e) {
       // Log the error
       \Drupal::logger('tidy_feedback')->error('Error loading feedback form: @error', ['@error' => $e->getMessage()]);
-      
+
       // Return a simple error message
       return [
         '#markup' => $this->t('Error loading feedback form. Please check the logs for details.'),
@@ -8938,17 +8938,17 @@ function openFeedbackModal(elementSelector) {
   if (!$('#tidy-feedback-modal').length) {
     $('body').append('<div id="tidy-feedback-modal"></div>');
   }
-  
+
   // Show loading indicator
   $('#tidy-feedback-modal').html('<div class="ajax-progress"><div class="throbber"></div><div class="message">' + Drupal.t('Loading...') + '</div></div>');
-  
+
   // Create and open dialog
   Drupal.dialog('#tidy-feedback-modal', {
     title: Drupal.t('Submit Feedback'),
     width: '500px',
     dialogClass: 'tidy-feedback-ui'
   }).showModal();
-  
+
   // Load form content via AJAX
   $.ajax({
     url: Drupal.url('tidy-feedback/form'),
@@ -8957,12 +8957,12 @@ function openFeedbackModal(elementSelector) {
     success: function(response) {
       console.log('Form loaded successfully');
       $('#tidy-feedback-modal').html(response);
-      
+
       // Set hidden fields
       $('#tidy-feedback-url').val(window.location.href);
       $('#tidy-feedback-element-selector').val(elementSelector);
       $('#tidy-feedback-browser-info').val(getBrowserInfo());
-      
+
       // Attach behaviors to the new content
       Drupal.attachBehaviors('#tidy-feedback-modal');
     },
@@ -8971,7 +8971,7 @@ function openFeedbackModal(elementSelector) {
       $('#tidy-feedback-modal').html('<p>' + Drupal.t('Error loading feedback form. Please try again later.') + '</p><p>' + textStatus + '</p>');
     }
   });
-  
+
   // Turn off feedback mode
   toggleFeedbackMode();
 }
@@ -9011,7 +9011,7 @@ class FeedbackForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form['#prefix'] = '<div id="tidy-feedback-form-wrapper">';
     $form['#suffix'] = '</div>';
-    
+
     $form['issue_type'] = [
       '#type' => 'select',
       '#title' => $this->t('Issue Type'),
@@ -9023,7 +9023,7 @@ class FeedbackForm extends FormBase {
       ],
       '#required' => TRUE,
     ];
-    
+
     $form['severity'] = [
       '#type' => 'select',
       '#title' => $this->t('Severity'),
@@ -9036,7 +9036,7 @@ class FeedbackForm extends FormBase {
       '#default_value' => 'normal',
       '#required' => TRUE,
     ];
-    
+
     $form['description'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Description'),
@@ -9044,27 +9044,27 @@ class FeedbackForm extends FormBase {
       '#rows' => 5,
       '#required' => TRUE,
     ];
-    
+
     // Hidden fields to store element information
     $form['url'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-url'],
     ];
-    
+
     $form['element_selector'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-element-selector'],
     ];
-    
+
     $form['browser_info'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-browser-info'],
     ];
-    
+
     $form['actions'] = [
       '#type' => 'actions',
     ];
-    
+
     $form['actions']['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit Feedback'),
@@ -9078,7 +9078,7 @@ class FeedbackForm extends FormBase {
         ],
       ],
     ];
-    
+
     $form['actions']['cancel'] = [
       '#type' => 'button',
       '#value' => $this->t('Cancel'),
@@ -9088,16 +9088,16 @@ class FeedbackForm extends FormBase {
         'wrapper' => 'tidy-feedback-form-wrapper',
       ],
     ];
-    
+
     return $form;
   }
-  
+
   /**
    * AJAX callback for form submission.
    */
   public function submitAjax(array &$form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
-    
+
     if ($form_state->getErrors()) {
       // Return the form with errors.
       $response->addCommand(new HtmlCommand('#tidy-feedback-form-wrapper', $form));
@@ -9105,14 +9105,14 @@ class FeedbackForm extends FormBase {
     else {
       // Close the modal.
       $response->addCommand(new CloseModalDialogCommand());
-      
+
       // Show a success message.
       $response->addCommand(new InvokeCommand(NULL, 'tidyFeedbackSuccess'));
     }
-    
+
     return $response;
   }
-  
+
   /**
    * AJAX callback for cancel button.
    */
@@ -9121,7 +9121,7 @@ class FeedbackForm extends FormBase {
     $response->addCommand(new CloseModalDialogCommand());
     return $response;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -9129,12 +9129,12 @@ class FeedbackForm extends FormBase {
     if (empty($form_state->getValue('description'))) {
       $form_state->setErrorByName('description', $this->t('Description field is required.'));
     }
-    
+
     if (empty($form_state->getValue('url'))) {
       $form_state->setValue('url', \Drupal::request()->getUri());
     }
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -9142,7 +9142,7 @@ class FeedbackForm extends FormBase {
     try {
       // Get values
       $values = $form_state->getValues();
-      
+
       // Create a record in the database
       $connection = \Drupal::database();
       $id = $connection->insert('tidy_feedback')
@@ -9161,7 +9161,7 @@ class FeedbackForm extends FormBase {
           'status' => 'new',
         ])
         ->execute();
-      
+
       $this->messenger()->addStatus($this->t('Thank you for your feedback.'));
     }
     catch (\Exception $e) {
@@ -9235,7 +9235,7 @@ public function getSimpleForm() {
       </form>
     </div>
   ';
-  
+
   // Attach JavaScript to handle the form submission
   $build = [
     '#markup' => $formHtml,
@@ -9243,7 +9243,7 @@ public function getSimpleForm() {
       'library' => ['tidy_feedback/tidy_feedback_form'],
     ],
   ];
-  
+
   return $build;
 }
 ```
@@ -9279,7 +9279,7 @@ And add this to your `js/tidy-feedback-form.js`:
       $('#simple-feedback-form', context).once('tidy-feedback-form').each(function() {
         $(this).on('submit', function(e) {
           e.preventDefault();
-          
+
           // Get form data
           var formData = {
             issue_type: $('#issue_type').val(),
@@ -9289,7 +9289,7 @@ And add this to your `js/tidy-feedback-form.js`:
             element_selector: $('#tidy-feedback-element-selector').val(),
             browser_info: $('#tidy-feedback-browser-info').val()
           };
-          
+
           // Submit via AJAX
           $.ajax({
             url: Drupal.url('tidy-feedback/submit'),
@@ -9299,7 +9299,7 @@ And add this to your `js/tidy-feedback-form.js`:
             success: function(response) {
               // Close the modal
               Drupal.dialog('#tidy-feedback-modal').close();
-              
+
               // Show success message
               $('body').append('<div class="tidy-feedback-success-message">' + Drupal.t('Feedback submitted successfully') + '</div>');
               setTimeout(function() {
@@ -9313,7 +9313,7 @@ And add this to your `js/tidy-feedback-form.js`:
             }
           });
         });
-        
+
         // Handle cancel button
         $('#feedback-cancel').on('click', function() {
           Drupal.dialog('#tidy-feedback-modal').close();
@@ -9357,27 +9357,27 @@ Here's an improved version of your `js/tidy-feedback-highlighter.js` file:
       let feedbackModeActive = false;
       const bannerPosition = drupalSettings.tidyFeedback?.bannerPosition || 'right';
       const highlightColor = drupalSettings.tidyFeedback?.highlightColor || '#ff0000';
-      
+
       // Create the banner if it doesn't exist
       if (!$('.tidy-feedback-banner').length) {
         const banner = $('<div class="tidy-feedback-banner" role="button" tabindex="0"></div>')
           .attr('title', Drupal.t('Click to activate feedback mode'))
           .addClass(`position-${bannerPosition}`);
-        
+
         $('body').append(banner);
       }
-      
+
       // Create highlight guides if they don't exist
       if (!$('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').length) {
         $('body').append(
           $('<div class="tidy-feedback-guide-horizontal tidy-feedback-ui"></div>'),
           $('<div class="tidy-feedback-guide-vertical tidy-feedback-ui"></div>')
         );
-        
+
         // Apply highlight color from settings
         $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').css('border-color', highlightColor);
       }
-      
+
       // Handle banner toggle
       once('tidy-feedback', '.tidy-feedback-banner', context).forEach(function (banner) {
         $(banner).on('click keypress', function (e) {
@@ -9385,44 +9385,44 @@ Here's an improved version of your `js/tidy-feedback-highlighter.js` file:
           if (e.type === 'keypress' && !(e.which === 13 || e.which === 32)) {
             return;
           }
-          
+
           toggleFeedbackMode();
         });
       });
-      
+
       // Function to toggle feedback mode
       function toggleFeedbackMode() {
         feedbackModeActive = !feedbackModeActive;
         $('.tidy-feedback-banner').toggleClass('active', feedbackModeActive);
         $('body').toggleClass('tidy-feedback-mode', feedbackModeActive);
-        
+
         console.log('Feedback mode:', feedbackModeActive ? 'activated' : 'deactivated');
-        
+
         if (feedbackModeActive) {
           // Update banner message
           $('.tidy-feedback-banner').attr('title', Drupal.t('Click to deactivate feedback mode'));
-          
+
           // Enable element highlighting
           $('body')
             .on('mousemove.tidy-feedback', handleMouseMove)
             .on('click.tidy-feedback', handleElementClick);
-          
+
           // Show guide lines
           $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').show();
         } else {
           // Update banner message
           $('.tidy-feedback-banner').attr('title', Drupal.t('Click to activate feedback mode'));
-          
+
           // Disable element highlighting
           $('body')
             .off('mousemove.tidy-feedback')
             .off('click.tidy-feedback');
-          
+
           // Hide guide lines
           $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
         }
       }
-      
+
       // Handle mouse movement for highlighting
       function handleMouseMove(e) {
         // Skip if we're hovering over a feedback UI element
@@ -9430,63 +9430,63 @@ Here's an improved version of your `js/tidy-feedback-highlighter.js` file:
           $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
           return;
         }
-        
+
         // Get target element dimensions and position
         const $target = $(e.target);
         const offset = $target.offset();
         const width = $target.outerWidth();
         const height = $target.outerHeight();
-        
+
         // Position horizontal guide at the middle of the element
         $('.tidy-feedback-guide-horizontal').css({
           top: offset.top + (height / 2),
           display: 'block'
         });
-        
+
         // Position vertical guide at the middle of the element
         $('.tidy-feedback-guide-vertical').css({
           left: offset.left + (width / 2),
           display: 'block'
         });
       }
-      
+
       // Handle click on elements to open the feedback form
       function handleElementClick(e) {
         // Skip if we're clicking on a feedback UI element
         if ($(e.target).closest('.tidy-feedback-ui, .ui-dialog').length) {
           return;
         }
-        
+
         e.preventDefault();
         e.stopPropagation();
-        
+
         // Get element information
         const $target = $(e.target);
         const elementSelector = getElementSelector($target[0]);
-        
+
         console.log('Element clicked:', elementSelector);
-        
+
         // Open the feedback form in a modal
         openFeedbackModal(elementSelector);
       }
-      
+
       // Function to open feedback modal
       function openFeedbackModal(elementSelector) {
         // Check if modal already exists
         if (!$('#tidy-feedback-modal').length) {
           $('body').append('<div id="tidy-feedback-modal"></div>');
         }
-        
+
         // Show loading indicator
         $('#tidy-feedback-modal').html('<div class="ajax-progress"><div class="throbber"></div><div class="message">' + Drupal.t('Loading...') + '</div></div>');
-        
+
         // Create and open dialog
         Drupal.dialog('#tidy-feedback-modal', {
           title: Drupal.t('Submit Feedback'),
           width: '500px',
           dialogClass: 'tidy-feedback-ui'
         }).showModal();
-        
+
         // Load form content via AJAX
         $.ajax({
           url: Drupal.url('tidy-feedback/form'),
@@ -9494,12 +9494,12 @@ Here's an improved version of your `js/tidy-feedback-highlighter.js` file:
           dataType: 'html',
           success: function(response) {
             $('#tidy-feedback-modal').html(response);
-            
+
             // Set hidden fields
             $('#tidy-feedback-url').val(window.location.href);
             $('#tidy-feedback-element-selector').val(elementSelector);
             $('#tidy-feedback-browser-info').val(getBrowserInfo());
-            
+
             // Attach behaviors to the new content
             Drupal.attachBehaviors('#tidy-feedback-modal');
           },
@@ -9508,20 +9508,20 @@ Here's an improved version of your `js/tidy-feedback-highlighter.js` file:
             $('#tidy-feedback-modal').html('<p>' + Drupal.t('Error loading feedback form. Please try again later.') + '</p>');
           }
         });
-        
+
         // Turn off feedback mode
         toggleFeedbackMode();
       }
-      
+
       // Helper function to get a selector for the element
       function getElementSelector(element) {
         // This is a simplified version. A production version would use a more robust algorithm.
         let path = [];
         let current = element;
-        
+
         while (current && current !== document.body) {
           let selector = current.tagName.toLowerCase();
-          
+
           if (current.id) {
             selector += '#' + current.id;
             path.unshift(selector);
@@ -9532,7 +9532,7 @@ Here's an improved version of your `js/tidy-feedback-highlighter.js` file:
               selector += '.' + classes.join('.');
             }
           }
-          
+
           // Add position among siblings if no ID
           if (!current.id) {
             const siblings = Array.from(current.parentNode.children).filter(c => c.tagName === current.tagName);
@@ -9541,14 +9541,14 @@ Here's an improved version of your `js/tidy-feedback-highlighter.js` file:
               selector += `:nth-of-type(${index})`;
             }
           }
-          
+
           path.unshift(selector);
           current = current.parentNode;
         }
-        
+
         return path.join(' > ');
       }
-      
+
       // Helper function to get browser information
       function getBrowserInfo() {
         const ua = navigator.userAgent;
@@ -9560,21 +9560,21 @@ Here's an improved version of your `js/tidy-feedback-highlighter.js` file:
           viewportHeight: window.innerHeight,
           devicePixelRatio: window.devicePixelRatio || 1
         };
-        
+
         return JSON.stringify(browserInfo);
       }
     }
   };
-  
+
   // Custom command for success message
   $.fn.tidyFeedbackSuccess = function() {
     Drupal.announce(Drupal.t('Feedback submitted successfully'));
-    
+
     // Show a floating success message
     const message = $('<div class="tidy-feedback-success-message"></div>')
       .text(Drupal.t('Feedback submitted successfully'))
       .appendTo('body');
-    
+
     // Remove message after 3 seconds
     setTimeout(function() {
       message.fadeOut(400, function() {
@@ -9671,27 +9671,27 @@ You can test if the basic functionality works with this simplified version:
 ```javascript
 (function ($) {
   'use strict';
-  
+
   // Add banner
   $('body').append('<div id="test-banner" style="position:fixed;right:0;top:50%;width:40px;height:150px;background:blue;color:white;cursor:pointer;">Test</div>');
-  
+
   // Add guide lines
   $('body').append('<div id="h-guide" style="position:fixed;left:0;width:100%;height:0;border-top:2px dashed red;z-index:1000;display:none;"></div>');
   $('body').append('<div id="v-guide" style="position:fixed;top:0;height:100%;width:0;border-left:2px dashed red;z-index:1000;display:none;"></div>');
-  
+
   let active = false;
-  
+
   // Toggle mode on banner click
   $('#test-banner').on('click', function() {
     active = !active;
     console.log('Mode:', active ? 'active' : 'inactive');
-    
+
     if (active) {
       $('body').on('mousemove', function(e) {
         $('#h-guide').css('top', e.pageY).show();
         $('#v-guide').css('left', e.pageX).show();
       });
-      
+
       $('body').on('click', function(e) {
         if ($(e.target).attr('id') !== 'test-banner') {
           console.log('Clicked:', e.target.tagName);
@@ -9732,12 +9732,12 @@ If the pointer-events CSS property isn't working correctly, try this alternative
 if (feedbackModeActive) {
   // Disable all links and buttons with a transparent overlay
   $('body').append('<div id="tidy-feedback-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:979;"></div>');
-  
+
   // Other activation code...
 } else {
   // Remove overlay
   $('#tidy-feedback-overlay').remove();
-  
+
   // Other deactivation code...
 }
 
@@ -9784,27 +9784,27 @@ Here's how to fix it:
       // Initialize variables
       const bannerPosition = drupalSettings.tidyFeedback?.bannerPosition || 'right';
       const highlightColor = drupalSettings.tidyFeedback?.highlightColor || '#ff0000';
-      
+
       // Create the banner if it doesn't exist
       if (!$('.tidy-feedback-banner').length) {
         const banner = $('<div class="tidy-feedback-banner" role="button" tabindex="0"></div>')
           .attr('title', Drupal.t('Click to activate feedback mode'))
           .addClass(`position-${bannerPosition}`);
-        
+
         $('body').append(banner);
       }
-      
+
       // Create highlight guides if they don't exist
       if (!$('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').length) {
         $('body').append(
           $('<div class="tidy-feedback-guide-horizontal tidy-feedback-ui"></div>'),
           $('<div class="tidy-feedback-guide-vertical tidy-feedback-ui"></div>')
         );
-        
+
         // Apply highlight color from settings
         $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').css('border-color', highlightColor);
       }
-      
+
       // Handle banner toggle
       once('tidy-feedback', '.tidy-feedback-banner', context).forEach(function (banner) {
         $(banner).on('click keypress', function (e) {
@@ -9812,13 +9812,13 @@ Here's how to fix it:
           if (e.type === 'keypress' && !(e.which === 13 || e.which === 32)) {
             return;
           }
-          
+
           toggleFeedbackMode();
         });
       });
     }
   };
-  
+
   // Define all these functions OUTSIDE the attach method but inside the IIFE
 
   // Function to toggle feedback mode
@@ -9826,34 +9826,34 @@ Here's how to fix it:
     feedbackModeActive = !feedbackModeActive;
     $('.tidy-feedback-banner').toggleClass('active', feedbackModeActive);
     $('body').toggleClass('tidy-feedback-mode', feedbackModeActive);
-    
+
     console.log('Feedback mode:', feedbackModeActive ? 'activated' : 'deactivated');
-    
+
     if (feedbackModeActive) {
       // Update banner message
       $('.tidy-feedback-banner').attr('title', Drupal.t('Click to deactivate feedback mode'));
-      
+
       // Enable element highlighting
       $('body')
         .on('mousemove.tidy-feedback', handleMouseMove)
         .on('click.tidy-feedback', handleElementClick);
-      
+
       // Show guide lines
       $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').show();
     } else {
       // Update banner message
       $('.tidy-feedback-banner').attr('title', Drupal.t('Click to activate feedback mode'));
-      
+
       // Disable element highlighting
       $('body')
         .off('mousemove.tidy-feedback')
         .off('click.tidy-feedback');
-      
+
       // Hide guide lines
       $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
     }
   }
-  
+
   // Handle mouse movement for highlighting
   function handleMouseMove(e) {
     // Skip if we're hovering over a feedback UI element
@@ -9861,63 +9861,63 @@ Here's how to fix it:
       $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
       return;
     }
-    
+
     // Get target element dimensions and position
     const $target = $(e.target);
     const offset = $target.offset();
     const width = $target.outerWidth();
     const height = $target.outerHeight();
-    
+
     // Position horizontal guide at the middle of the element
     $('.tidy-feedback-guide-horizontal').css({
       top: offset.top + (height / 2),
       display: 'block'
     });
-    
+
     // Position vertical guide at the middle of the element
     $('.tidy-feedback-guide-vertical').css({
       left: offset.left + (width / 2),
       display: 'block'
     });
   }
-  
+
   // Handle click on elements to open the feedback form
   function handleElementClick(e) {
     // Skip if we're clicking on a feedback UI element
     if ($(e.target).closest('.tidy-feedback-ui, .ui-dialog').length) {
       return;
     }
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Get element information
     const $target = $(e.target);
     const elementSelector = getElementSelector($target[0]);
-    
+
     console.log('Element clicked:', elementSelector);
-    
+
     // Open the feedback form in a modal
     openFeedbackModal(elementSelector);
   }
-  
+
   // Function to open feedback modal
   function openFeedbackModal(elementSelector) {
     // Check if modal already exists
     if (!$('#tidy-feedback-modal').length) {
       $('body').append('<div id="tidy-feedback-modal"></div>');
     }
-    
+
     // Show loading indicator
     $('#tidy-feedback-modal').html('<div class="ajax-progress"><div class="throbber"></div><div class="message">' + Drupal.t('Loading...') + '</div></div>');
-    
+
     // Create and open dialog
     Drupal.dialog('#tidy-feedback-modal', {
       title: Drupal.t('Submit Feedback'),
       width: '500px',
       dialogClass: 'tidy-feedback-ui'
     }).showModal();
-    
+
     // Load form content via AJAX
     $.ajax({
       url: Drupal.url('tidy-feedback/form'),
@@ -9925,12 +9925,12 @@ Here's how to fix it:
       dataType: 'html',
       success: function(response) {
         $('#tidy-feedback-modal').html(response);
-        
+
         // Set hidden fields
         $('#tidy-feedback-url').val(window.location.href);
         $('#tidy-feedback-element-selector').val(elementSelector);
         $('#tidy-feedback-browser-info').val(getBrowserInfo());
-        
+
         // Attach behaviors to the new content
         Drupal.attachBehaviors('#tidy-feedback-modal');
       },
@@ -9939,20 +9939,20 @@ Here's how to fix it:
         $('#tidy-feedback-modal').html('<p>' + Drupal.t('Error loading feedback form. Please try again later.') + '</p>');
       }
     });
-    
+
     // Turn off feedback mode
     toggleFeedbackMode();
   }
-  
+
   // Helper function to get a selector for the element
   function getElementSelector(element) {
     // This is a simplified version. A production version would use a more robust algorithm.
     let path = [];
     let current = element;
-    
+
     while (current && current !== document.body) {
       let selector = current.tagName.toLowerCase();
-      
+
       if (current.id) {
         selector += '#' + current.id;
         path.unshift(selector);
@@ -9963,7 +9963,7 @@ Here's how to fix it:
           selector += '.' + classes.join('.');
         }
       }
-      
+
       // Add position among siblings if no ID
       if (!current.id) {
         const siblings = Array.from(current.parentNode.children).filter(c => c.tagName === current.tagName);
@@ -9972,14 +9972,14 @@ Here's how to fix it:
           selector += `:nth-of-type(${index})`;
         }
       }
-      
+
       path.unshift(selector);
       current = current.parentNode;
     }
-    
+
     return path.join(' > ');
   }
-  
+
   // Helper function to get browser information
   function getBrowserInfo() {
     const ua = navigator.userAgent;
@@ -9991,19 +9991,19 @@ Here's how to fix it:
       viewportHeight: window.innerHeight,
       devicePixelRatio: window.devicePixelRatio || 1
     };
-    
+
     return JSON.stringify(browserInfo);
   }
-  
+
   // Custom command for success message
   $.fn.tidyFeedbackSuccess = function() {
     Drupal.announce(Drupal.t('Feedback submitted successfully'));
-    
+
     // Show a floating success message
     const message = $('<div class="tidy-feedback-success-message"></div>')
       .text(Drupal.t('Feedback submitted successfully'))
       .appendTo('body');
-    
+
     // Remove message after 3 seconds
     setTimeout(function() {
       message.fadeOut(400, function() {
@@ -10124,32 +10124,32 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
   Drupal.behaviors.tidyFeedbackHighlighter = {
     attach: function (context, settings) {
       console.log('Tidy Feedback highlighter attached');
-      
+
       // Initialize variables
       const bannerPosition = drupalSettings.tidyFeedback?.bannerPosition || 'right';
       const highlightColor = drupalSettings.tidyFeedback?.highlightColor || '#ff0000';
-      
+
       // Create the banner if it doesn't exist
       if (!$('.tidy-feedback-banner').length) {
         console.log('Creating banner');
         const banner = $('<div class="tidy-feedback-banner" role="button" tabindex="0"></div>')
           .attr('title', Drupal.t('Click to activate feedback mode'))
           .addClass(`position-${bannerPosition}`);
-        
+
         $('body').append(banner);
       }
-      
+
       // Create highlight guides if they don't exist
       if (!$('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').length) {
         $('body').append(
           $('<div class="tidy-feedback-guide-horizontal tidy-feedback-ui"></div>'),
           $('<div class="tidy-feedback-guide-vertical tidy-feedback-ui"></div>')
         );
-        
+
         // Apply highlight color from settings
         $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').css('border-color', highlightColor);
       }
-      
+
       // Handle banner toggle - using once() correctly
       once('tidy-feedback', '.tidy-feedback-banner', context).forEach(function (banner) {
         console.log('Attaching click handler to banner');
@@ -10158,10 +10158,10 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
           if (e.type === 'keypress' && !(e.which === 13 || e.which === 32)) {
             return;
           }
-          
+
           // Just toggle feedback mode, don't open modal
           toggleFeedbackMode();
-          
+
           // Prevent default action
           e.preventDefault();
           e.stopPropagation();
@@ -10169,40 +10169,40 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
       });
     }
   };
-  
+
   // Function to toggle feedback mode
   function toggleFeedbackMode() {
     feedbackModeActive = !feedbackModeActive;
     $('.tidy-feedback-banner').toggleClass('active', feedbackModeActive);
     $('body').toggleClass('tidy-feedback-mode', feedbackModeActive);
-    
+
     console.log('Feedback mode:', feedbackModeActive ? 'activated' : 'deactivated');
-    
+
     if (feedbackModeActive) {
       // Update banner message
       $('.tidy-feedback-banner').attr('title', Drupal.t('Click to deactivate feedback mode'));
-      
+
       // Enable element highlighting
       $('body')
         .on('mousemove.tidy-feedback', handleMouseMove)
         .on('click.tidy-feedback', handleElementClick);
-      
+
       // Show guide lines
       $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').show();
     } else {
       // Update banner message
       $('.tidy-feedback-banner').attr('title', Drupal.t('Click to activate feedback mode'));
-      
+
       // Disable element highlighting
       $('body')
         .off('mousemove.tidy-feedback')
         .off('click.tidy-feedback');
-      
+
       // Hide guide lines
       $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
     }
   }
-  
+
   // Handle mouse movement for highlighting
   function handleMouseMove(e) {
     // Skip if we're hovering over a feedback UI element
@@ -10210,28 +10210,28 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
       $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
       return;
     }
-    
+
     console.log('Mouse move detected on:', e.target.tagName);
-    
+
     // Get target element dimensions and position
     const $target = $(e.target);
     const offset = $target.offset();
     const width = $target.outerWidth();
     const height = $target.outerHeight();
-    
+
     // Position horizontal guide at the middle of the element
     $('.tidy-feedback-guide-horizontal').css({
       top: offset.top + (height / 2),
       display: 'block'
     });
-    
+
     // Position vertical guide at the middle of the element
     $('.tidy-feedback-guide-vertical').css({
       left: offset.left + (width / 2),
       display: 'block'
     });
   }
-  
+
   // Handle click on elements to open the feedback form
   function handleElementClick(e) {
     // Skip if we're clicking on a feedback UI element or the banner itself
@@ -10239,41 +10239,41 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
       console.log('Clicking on feedback UI element - ignoring');
       return;
     }
-    
+
     console.log('Element clicked - opening feedback form');
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Get element information
     const $target = $(e.target);
     const elementSelector = getElementSelector($target[0]);
-    
+
     console.log('Element selector:', elementSelector);
-    
+
     // Open the feedback form in a modal
     openFeedbackModal(elementSelector);
   }
-  
+
   // Function to open feedback modal
   function openFeedbackModal(elementSelector) {
     console.log('Opening feedback modal for:', elementSelector);
-    
+
     // Check if modal already exists
     if (!$('#tidy-feedback-modal').length) {
       $('body').append('<div id="tidy-feedback-modal"></div>');
     }
-    
+
     // Show loading indicator
     $('#tidy-feedback-modal').html('<div class="ajax-progress"><div class="throbber"></div><div class="message">' + Drupal.t('Loading...') + '</div></div>');
-    
+
     // Create and open dialog
     Drupal.dialog('#tidy-feedback-modal', {
       title: Drupal.t('Submit Feedback'),
       width: '500px',
       dialogClass: 'tidy-feedback-ui'
     }).showModal();
-    
+
     // Load form content via AJAX
     $.ajax({
       url: Drupal.url('tidy-feedback/form'),
@@ -10281,12 +10281,12 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
       dataType: 'html',
       success: function(response) {
         $('#tidy-feedback-modal').html(response);
-        
+
         // Set hidden fields
         $('#tidy-feedback-url').val(window.location.href);
         $('#tidy-feedback-element-selector').val(elementSelector);
         $('#tidy-feedback-browser-info').val(getBrowserInfo());
-        
+
         // Attach behaviors to the new content
         Drupal.attachBehaviors('#tidy-feedback-modal');
       },
@@ -10295,20 +10295,20 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
         $('#tidy-feedback-modal').html('<p>' + Drupal.t('Error loading feedback form. Please try again later.') + '</p>');
       }
     });
-    
+
     // Turn off feedback mode
     toggleFeedbackMode();
   }
-  
+
   // Helper function to get a selector for the element
   function getElementSelector(element) {
     // This is a simplified version. A production version would use a more robust algorithm.
     let path = [];
     let current = element;
-    
+
     while (current && current !== document.body) {
       let selector = current.tagName.toLowerCase();
-      
+
       if (current.id) {
         selector += '#' + current.id;
         path.unshift(selector);
@@ -10319,7 +10319,7 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
           selector += '.' + classes.join('.');
         }
       }
-      
+
       // Add position among siblings if no ID
       if (!current.id) {
         const siblings = Array.from(current.parentNode.children).filter(c => c.tagName === current.tagName);
@@ -10328,14 +10328,14 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
           selector += `:nth-of-type(${index})`;
         }
       }
-      
+
       path.unshift(selector);
       current = current.parentNode;
     }
-    
+
     return path.join(' > ');
   }
-  
+
   // Helper function to get browser information
   function getBrowserInfo() {
     const ua = navigator.userAgent;
@@ -10347,19 +10347,19 @@ Let's modify the `tidy-feedback-highlighter.js` file to fix the banner behavior.
       viewportHeight: window.innerHeight,
       devicePixelRatio: window.devicePixelRatio || 1
     };
-    
+
     return JSON.stringify(browserInfo);
   }
-  
+
   // Custom command for success message
   $.fn.tidyFeedbackSuccess = function() {
     Drupal.announce(Drupal.t('Feedback submitted successfully'));
-    
+
     // Show a floating success message
     const message = $('<div class="tidy-feedback-success-message"></div>')
       .text(Drupal.t('Feedback submitted successfully'))
       .appendTo('body');
-    
+
     // Remove message after 3 seconds
     setTimeout(function() {
       message.fadeOut(400, function() {
@@ -10479,30 +10479,30 @@ function toggleFeedbackMode() {
   feedbackModeActive = !feedbackModeActive;
   $('.tidy-feedback-banner').toggleClass('active', feedbackModeActive);
   $('body').toggleClass('tidy-feedback-mode', feedbackModeActive);
-  
+
   console.log('Feedback mode:', feedbackModeActive ? 'activated' : 'deactivated');
-  
+
   if (feedbackModeActive) {
     // Update banner message
     $('.tidy-feedback-banner').attr('title', Drupal.t('Click to deactivate feedback mode'));
-    
+
     // Create an overlay to prevent interaction with page elements
     $('body').append('<div id="tidy-feedback-overlay" class="tidy-feedback-ui"></div>');
-    
+
     // Bind events to the overlay instead of body
     $('#tidy-feedback-overlay')
       .on('mousemove', handleOverlayMouseMove)
       .on('click', handleOverlayClick);
-    
+
     // Show guide lines
     $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').show();
   } else {
     // Update banner message
     $('.tidy-feedback-banner').attr('title', Drupal.t('Click to activate feedback mode'));
-    
+
     // Remove the overlay and its events
     $('#tidy-feedback-overlay').remove();
-    
+
     // Hide guide lines
     $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
   }
@@ -10516,25 +10516,25 @@ function toggleFeedbackMode() {
 function handleOverlayMouseMove(e) {
   // Get the element underneath the overlay at this position
   const elementUnder = document.elementFromPoint(e.clientX, e.clientY);
-  
+
   // Skip if the element under is one of our UI elements
   if ($(elementUnder).closest('.tidy-feedback-ui, .ui-dialog, .tidy-feedback-banner').length) {
     $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
     return;
   }
-  
+
   // Get target element dimensions and position
   const $target = $(elementUnder);
   const offset = $target.offset();
   const width = $target.outerWidth();
   const height = $target.outerHeight();
-  
+
   // Position horizontal guide at the middle of the element
   $('.tidy-feedback-guide-horizontal').css({
     top: offset.top + (height / 2),
     display: 'block'
   });
-  
+
   // Position vertical guide at the middle of the element
   $('.tidy-feedback-guide-vertical').css({
     left: offset.left + (width / 2),
@@ -10546,25 +10546,25 @@ function handleOverlayMouseMove(e) {
 function handleOverlayClick(e) {
   // Get the element underneath the overlay at this position
   const elementUnder = document.elementFromPoint(e.clientX, e.clientY);
-  
+
   // Skip if the element under is one of our UI elements
   if ($(elementUnder).closest('.tidy-feedback-ui, .ui-dialog, .tidy-feedback-banner').length) {
     console.log('Clicking on feedback UI element - ignoring');
     return;
   }
-  
+
   console.log('Element clicked - opening feedback form for', elementUnder.tagName);
-  
+
   // Prevent default action
   e.preventDefault();
   e.stopPropagation();
-  
+
   // Get element information
   const $target = $(elementUnder);
   const elementSelector = getElementSelector(elementUnder);
-  
+
   console.log('Element selector:', elementSelector);
-  
+
   // Open the feedback form in a modal
   openFeedbackModal(elementSelector);
 }
@@ -10640,33 +10640,33 @@ Let's take a step back and simplify our approach. Let's fix both the missing gui
       // Initialize variables
       const bannerPosition = drupalSettings.tidyFeedback?.bannerPosition || 'right';
       const highlightColor = drupalSettings.tidyFeedback?.highlightColor || '#ff0000';
-      
+
       // Only run this once for the document
       if (context === document) {
         console.log('Tidy Feedback highlighter initialized');
-        
+
         // Create the banner if it doesn't exist
         if (!$('.tidy-feedback-banner').length) {
           console.log('Creating banner');
           const banner = $('<div class="tidy-feedback-banner" role="button" tabindex="0"></div>')
             .attr('title', Drupal.t('Click to activate feedback mode'))
             .addClass(`position-${bannerPosition}`);
-          
+
           $('body').append(banner);
         }
-        
+
         // Create highlight guides if they don't exist
         if (!$('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').length) {
           $('body').append(
             $('<div class="tidy-feedback-guide-horizontal tidy-feedback-ui"></div>'),
             $('<div class="tidy-feedback-guide-vertical tidy-feedback-ui"></div>')
           );
-          
+
           // Apply highlight color from settings
           $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').css('border-color', highlightColor);
         }
       }
-      
+
       // Handle banner click - use once for the banner elements
       once('tidy-feedback-banner', '.tidy-feedback-banner', context).forEach(function (banner) {
         console.log('Attaching click handler to banner');
@@ -10679,22 +10679,22 @@ Let's take a step back and simplify our approach. Let's fix both the missing gui
       });
     }
   };
-  
+
   // Toggle feedback mode
   function toggleFeedbackMode() {
     feedbackModeActive = !feedbackModeActive;
     console.log('Feedback mode:', feedbackModeActive ? 'ON' : 'OFF');
-    
+
     // Toggle active class on banner
     $('.tidy-feedback-banner').toggleClass('active', feedbackModeActive);
-    
+
     if (feedbackModeActive) {
       // Create overlay if it doesn't exist
       if (!$('#tidy-feedback-overlay').length) {
         $('body').append('<div id="tidy-feedback-overlay" class="tidy-feedback-ui"></div>');
         console.log('Overlay created');
       }
-      
+
       // Setup overlay event handlers
       $('#tidy-feedback-overlay')
         .on('mousemove', function(e) {
@@ -10703,87 +10703,87 @@ Let's take a step back and simplify our approach. Let's fix both the missing gui
         .on('click', function(e) {
           handleOverlayClick(e);
         });
-      
+
       // Show the overlay
       $('#tidy-feedback-overlay').show();
-      
+
       // Update banner tooltip
       $('.tidy-feedback-banner').attr('title', Drupal.t('Click to deactivate feedback mode'));
-      
+
       console.log('Feedback mode activated');
     } else {
       // Hide overlay and unbind events
       $('#tidy-feedback-overlay').off('mousemove click').hide();
-      
+
       // Hide guide lines
       $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
-      
+
       // Update banner tooltip
       $('.tidy-feedback-banner').attr('title', Drupal.t('Click to activate feedback mode'));
-      
+
       console.log('Feedback mode deactivated');
     }
   }
-  
+
   // Handle mouse movement over the overlay
   function handleOverlayMouseMove(e) {
     // Get element underneath the overlay
     $('#tidy-feedback-overlay').hide(); // Temporarily hide overlay to find element underneath
     const elementUnder = document.elementFromPoint(e.clientX, e.clientY);
     $('#tidy-feedback-overlay').show(); // Show overlay again
-    
+
     // Skip if element is part of our UI
     if ($(elementUnder).closest('.tidy-feedback-ui, .ui-dialog').length) {
       $('.tidy-feedback-guide-horizontal, .tidy-feedback-guide-vertical').hide();
       return;
     }
-    
+
     // Get position data
     const $target = $(elementUnder);
     const offset = $target.offset();
     const width = $target.outerWidth();
     const height = $target.outerHeight();
-    
+
     // Update guide positions
     $('.tidy-feedback-guide-horizontal').css({
       top: offset.top + (height / 2),
       display: 'block'
     });
-    
+
     $('.tidy-feedback-guide-vertical').css({
       left: offset.left + (width / 2),
       display: 'block'
     });
   }
-  
+
   // Handle click on the overlay
   function handleOverlayClick(e) {
     // Get element underneath the overlay
     $('#tidy-feedback-overlay').hide(); // Temporarily hide overlay
     const elementUnder = document.elementFromPoint(e.clientX, e.clientY);
     $('#tidy-feedback-overlay').show(); // Show overlay again
-    
+
     // Skip if element is part of our UI
     if ($(elementUnder).closest('.tidy-feedback-ui, .ui-dialog').length) {
       return;
     }
-    
+
     // Get element selector
     const elementSelector = getElementSelector(elementUnder);
     console.log('Clicked on element:', elementSelector);
-    
+
     // Open feedback form
     openFeedbackModal(elementSelector);
   }
-  
+
   // Get CSS selector for an element
   function getElementSelector(element) {
     let path = [];
     let current = element;
-    
+
     while (current && current !== document.body) {
       let selector = current.tagName.toLowerCase();
-      
+
       if (current.id) {
         selector += '#' + current.id;
         path.unshift(selector);
@@ -10794,43 +10794,43 @@ Let's take a step back and simplify our approach. Let's fix both the missing gui
           selector += '.' + classes.join('.');
         }
       }
-      
+
       path.unshift(selector);
       current = current.parentNode;
     }
-    
+
     return path.join(' > ');
   }
-  
+
   // Open feedback modal
   function openFeedbackModal(elementSelector) {
     console.log('Opening feedback modal for:', elementSelector);
-    
+
     // Create modal container if needed
     if (!$('#tidy-feedback-modal').length) {
       $('body').append('<div id="tidy-feedback-modal" class="tidy-feedback-ui"></div>');
     }
-    
+
     // Show loading indicator
     $('#tidy-feedback-modal').html('<div class="ajax-progress"><div class="throbber"></div><div class="message">' + Drupal.t('Loading...') + '</div></div>');
-    
+
     // Create dialog
     Drupal.dialog('#tidy-feedback-modal', {
       title: Drupal.t('Submit Feedback'),
       width: '500px',
       dialogClass: 'tidy-feedback-ui'
     }).showModal();
-    
+
     // Load form via AJAX
     $.ajax({
       url: Drupal.url('tidy-feedback/form'),
       type: 'GET',
       success: function(response) {
         console.log('Form loaded successfully');
-        
+
         // Update modal content
         $('#tidy-feedback-modal').html(response);
-        
+
         // Set hidden field values
         $('#tidy-feedback-url').val(window.location.href);
         $('#tidy-feedback-element-selector').val(elementSelector);
@@ -10841,7 +10841,7 @@ Let's take a step back and simplify our approach. Let's fix both the missing gui
           viewportWidth: window.innerWidth,
           viewportHeight: window.innerHeight
         }));
-        
+
         // Attach behaviors to new content
         Drupal.attachBehaviors('#tidy-feedback-modal');
       },
@@ -10850,19 +10850,19 @@ Let's take a step back and simplify our approach. Let's fix both the missing gui
         $('#tidy-feedback-modal').html('<p>' + Drupal.t('Error loading feedback form. Please try again later.') + '</p>');
       }
     });
-    
+
     // Deactivate feedback mode
     toggleFeedbackMode();
   }
-  
+
   // Success message function
   $.fn.tidyFeedbackSuccess = function() {
     Drupal.announce(Drupal.t('Feedback submitted successfully'));
-    
+
     const message = $('<div class="tidy-feedback-success-message"></div>')
       .text(Drupal.t('Feedback submitted successfully'))
       .appendTo('body');
-    
+
     setTimeout(function() {
       message.fadeOut(400, function() {
         $(this).remove();
@@ -11102,10 +11102,10 @@ class FeedbackForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form['#prefix'] = '<div id="tidy-feedback-form-wrapper">';
     $form['#suffix'] = '</div>';
-    
+
     // Important: Set this to prevent default form redirect
     $form['#action'] = '';
-    
+
     $form['issue_type'] = [
       '#type' => 'select',
       '#title' => $this->t('Issue Type'),
@@ -11117,7 +11117,7 @@ class FeedbackForm extends FormBase {
       ],
       '#required' => TRUE,
     ];
-    
+
     $form['severity'] = [
       '#type' => 'select',
       '#title' => $this->t('Severity'),
@@ -11130,7 +11130,7 @@ class FeedbackForm extends FormBase {
       '#default_value' => 'normal',
       '#required' => TRUE,
     ];
-    
+
     $form['description'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Description'),
@@ -11138,27 +11138,27 @@ class FeedbackForm extends FormBase {
       '#rows' => 5,
       '#required' => TRUE,
     ];
-    
+
     // Hidden fields to store element information
     $form['url'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-url'],
     ];
-    
+
     $form['element_selector'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-element-selector'],
     ];
-    
+
     $form['browser_info'] = [
       '#type' => 'hidden',
       '#attributes' => ['id' => 'tidy-feedback-browser-info'],
     ];
-    
+
     $form['actions'] = [
       '#type' => 'actions',
     ];
-    
+
     $form['actions']['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit Feedback'),
@@ -11172,7 +11172,7 @@ class FeedbackForm extends FormBase {
         ],
       ],
     ];
-    
+
     $form['actions']['cancel'] = [
       '#type' => 'button',
       '#value' => $this->t('Cancel'),
@@ -11182,16 +11182,16 @@ class FeedbackForm extends FormBase {
         'wrapper' => 'tidy-feedback-form-wrapper',
       ],
     ];
-    
+
     return $form;
   }
-  
+
   /**
    * AJAX callback for form submission.
    */
   public function submitAjax(array &$form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
-    
+
     if ($form_state->getErrors()) {
       // Return the form with errors.
       $response->addCommand(new HtmlCommand('#tidy-feedback-form-wrapper', $form));
@@ -11199,17 +11199,17 @@ class FeedbackForm extends FormBase {
     else {
       // Process the submission
       $this->processFormSubmission($form_state);
-      
+
       // Close the modal.
       $response->addCommand(new CloseModalDialogCommand());
-      
+
       // Show a success message.
       $response->addCommand(new InvokeCommand(NULL, 'tidyFeedbackSuccess'));
     }
-    
+
     return $response;
   }
-  
+
   /**
    * AJAX callback for cancel button.
    */
@@ -11218,7 +11218,7 @@ class FeedbackForm extends FormBase {
     $response->addCommand(new CloseModalDialogCommand());
     return $response;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -11226,12 +11226,12 @@ class FeedbackForm extends FormBase {
     if (empty($form_state->getValue('description'))) {
       $form_state->setErrorByName('description', $this->t('Description field is required.'));
     }
-    
+
     if (empty($form_state->getValue('url'))) {
       $form_state->setValue('url', \Drupal::request()->getUri());
     }
   }
-  
+
   /**
    * Process the form submission (separated to be called from AJAX callback).
    */
@@ -11239,7 +11239,7 @@ class FeedbackForm extends FormBase {
     try {
       // Get values
       $values = $form_state->getValues();
-      
+
       // Create a record in the database
       $connection = \Drupal::database();
       $id = $connection->insert('tidy_feedback')
@@ -11258,7 +11258,7 @@ class FeedbackForm extends FormBase {
           'status' => 'new',
         ])
         ->execute();
-      
+
       // Log success but don't show messenger message (we'll show via JS)
       \Drupal::logger('tidy_feedback')->notice('Feedback #@id submitted successfully.', ['@id' => $id]);
     }
@@ -11267,7 +11267,7 @@ class FeedbackForm extends FormBase {
       throw $e; // Re-throw so the AJAX handler can catch it
     }
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -11276,7 +11276,7 @@ class FeedbackForm extends FormBase {
     try {
       $this->processFormSubmission($form_state);
       $this->messenger()->addStatus($this->t('Thank you for your feedback.'));
-      
+
       // Get the original URL from the form
       $url = $form_state->getValue('url');
       if (!empty($url)) {
@@ -11299,11 +11299,11 @@ Here's a small tweak to the success message handler in the JavaScript:
 // Success message function
 $.fn.tidyFeedbackSuccess = function() {
   Drupal.announce(Drupal.t('Feedback submitted successfully'));
-  
+
   const message = $('<div class="tidy-feedback-success-message"></div>')
     .text(Drupal.t('Feedback submitted successfully'))
     .appendTo('body');
-  
+
   setTimeout(function() {
     message.fadeOut(400, function() {
       $(this).remove();
@@ -11380,10 +11380,10 @@ $.ajax({
   type: 'GET',
   success: function(response) {
     console.log('Form loaded successfully');
-    
+
     // Update modal content
     $('#tidy-feedback-modal').html(response);
-    
+
     // Set hidden field values
     $('#tidy-feedback-url').val(window.location.href);
     $('#tidy-feedback-element-selector').val(elementSelector);
@@ -11394,12 +11394,12 @@ $.ajax({
       viewportWidth: window.innerWidth,
       viewportHeight: window.innerHeight
     }));
-    
+
     // Add manual form submission handler to ensure it works
     $('#tidy-feedback-form').on('submit', function(e) {
       console.log('Form submitted manually');
       var formData = $(this).serialize();
-      
+
       // Manually submit via AJAX and show success
       $.ajax({
         url: Drupal.url('tidy-feedback/submit'),
@@ -11415,10 +11415,10 @@ $.ajax({
           $('#tidy-feedback-form-wrapper').prepend('<div class="messages messages--error">' + Drupal.t('Error submitting feedback. Please try again.') + '</div>');
         }
       });
-      
+
       return false; // Prevent default form submission
     });
-    
+
     // Attach behaviors to new content
     Drupal.attachBehaviors('#tidy-feedback-modal');
   },
@@ -11439,12 +11439,12 @@ public function submitDirectFeedback(Request $request) {
   try {
     // Get submitted data
     $data = $request->request->all();
-    
+
     // Validate required fields
     if (empty($data['description'])) {
       return new JsonResponse(['status' => 'error', 'message' => 'Description is required'], 400);
     }
-    
+
     // Insert into database
     $connection = \Drupal::database();
     $id = $connection->insert('tidy_feedback')
@@ -11463,9 +11463,9 @@ public function submitDirectFeedback(Request $request) {
         'status' => 'new',
       ])
       ->execute();
-    
+
     \Drupal::logger('tidy_feedback')->notice('Feedback #@id submitted successfully via direct controller.', ['@id' => $id]);
-    
+
     return new JsonResponse(['status' => 'success', 'message' => 'Feedback submitted successfully', 'id' => $id]);
   }
   catch (\Exception $e) {
@@ -11525,13 +11525,13 @@ Make sure your Form class build method doesn't have extra properties that might 
 public function buildForm(array $form, FormStateInterface $form_state) {
   $form['#prefix'] = '<div id="tidy-feedback-form-wrapper">';
   $form['#suffix'] = '</div>';
-  
-  // Set empty action to prevent redirect
-  $form['#action'] = '';
-  
+
+  // Add empty action to prevent redirect
+  $form["#action"] = "";
+
   // Add form ID
   $form['#id'] = 'tidy-feedback-form';
-  
+
   // ...rest of your form elements
 }
 ```
@@ -11587,12 +11587,12 @@ public function submitDirectFeedback(Request $request) {
   try {
     // Get submitted data
     $data = $request->request->all();
-    
+
     // Validate required fields
     if (empty($data['description'])) {
       return new JsonResponse(['status' => 'error', 'message' => 'Description is required'], 400);
     }
-    
+
     // Insert into database
     $connection = \Drupal::database();
     $id = $connection->insert('tidy_feedback')
@@ -11611,9 +11611,9 @@ public function submitDirectFeedback(Request $request) {
         'status' => 'new',
       ])
       ->execute();
-    
+
     \Drupal::logger('tidy_feedback')->notice('Feedback #@id submitted successfully via direct controller.', ['@id' => $id]);
-    
+
     return new JsonResponse(['status' => 'success', 'message' => 'Feedback submitted successfully', 'id' => $id]);
   }
   catch (\Exception $e) {
@@ -11627,16 +11627,16 @@ Make sure the method is inside the class definition:
 
 ```php
 class TidyFeedbackController extends ControllerBase {
-  
+
   // Other methods...
-  
+
   /**
    * Controller method to handle direct form submissions.
    */
   public function submitDirectFeedback(Request $request) {
     // Method implementation here...
   }
-  
+
   // Other methods...
 }
 ```
@@ -11713,7 +11713,7 @@ Uncaught TypeError: context.querySelectorAll is not a function
 And this:
 Uncaught TypeError: The element must be an instance of Element
     u once.js:122
-  
+
 And this:
 Submission error: <empty string> tidy-feedback-highlighter.js:269:23
 
@@ -11731,7 +11731,7 @@ Uncaught TypeError: context.querySelectorAll is not a function
 And this:
 Uncaught TypeError: The element must be an instance of Element
     u once.js:122
-  
+
 And this:
 Submission error: <empty string> tidy-feedback-highlighter.js:269:23
 
@@ -11754,7 +11754,7 @@ Replace the form loading and submission code with this simplified version:
 // Function to open feedback modal
 function openFeedbackModal(elementSelector) {
   console.log('Opening feedback modal for:', elementSelector);
-  
+
   // Create a simple form without relying on Drupal's form API
   var simpleForm = `
     <div id="tidy-feedback-form-wrapper">
@@ -11797,27 +11797,27 @@ function openFeedbackModal(elementSelector) {
       </form>
     </div>
   `;
-  
+
   // Create modal container if needed
   if (!$('#tidy-feedback-modal').length) {
     $('body').append('<div id="tidy-feedback-modal" class="tidy-feedback-ui"></div>');
   }
-  
+
   // Set the form content directly
   $('#tidy-feedback-modal').html(simpleForm);
-  
+
   // Create dialog
   var dialog = Drupal.dialog('#tidy-feedback-modal', {
     title: Drupal.t('Submit Feedback'),
     width: '500px',
     dialogClass: 'tidy-feedback-ui'
   }).showModal();
-  
+
   // Handle form submission
   $('#tidy-feedback-simple-form').on('submit', function(e) {
     e.preventDefault();
     console.log('Form submitted');
-    
+
     // Collect form data
     var formData = {
       issue_type: $('#issue_type').val(),
@@ -11827,7 +11827,7 @@ function openFeedbackModal(elementSelector) {
       element_selector: $('#tidy-feedback-element-selector').val(),
       browser_info: $('#tidy-feedback-browser-info').val()
     };
-    
+
     // Manual AJAX submission
     $.ajax({
       url: Drupal.url('tidy-feedback/submit'),
@@ -11846,12 +11846,12 @@ function openFeedbackModal(elementSelector) {
       }
     });
   });
-  
+
   // Handle cancel button
   $('#feedback-cancel').on('click', function() {
     dialog.close();
   });
-  
+
   // Deactivate feedback mode
   toggleFeedbackMode();
 }
@@ -11861,7 +11861,7 @@ function showSuccessMessage() {
   const message = $('<div class="tidy-feedback-success-message"></div>')
     .text(Drupal.t('Feedback submitted successfully'))
     .appendTo('body');
-  
+
   setTimeout(function() {
     message.fadeOut(400, function() {
       $(this).remove();
@@ -11924,14 +11924,14 @@ public function submitDirectFeedback(Request $request) {
     } else {
       $data = $request->request->all();
     }
-    
+
     \Drupal::logger('tidy_feedback')->notice('Received data: @data', ['@data' => print_r($data, TRUE)]);
-    
+
     // Validate required fields
     if (empty($data['description'])) {
       return new JsonResponse(['status' => 'error', 'message' => 'Description is required'], 400);
     }
-    
+
     // Insert into database
     $connection = \Drupal::database();
     $id = $connection->insert('tidy_feedback')
@@ -11950,9 +11950,9 @@ public function submitDirectFeedback(Request $request) {
         'status' => 'new',
       ])
       ->execute();
-    
+
     \Drupal::logger('tidy_feedback')->notice('Feedback #@id submitted successfully via direct controller.', ['@id' => $id]);
-    
+
     return new JsonResponse(['status' => 'success', 'message' => 'Feedback submitted successfully', 'id' => $id]);
   }
   catch (\Exception $e) {
@@ -12052,7 +12052,7 @@ The error `Uncaught TypeError: can't access property "close", dialog is undefine
 // Function to open feedback modal
 function openFeedbackModal(elementSelector) {
   console.log('Opening feedback modal for:', elementSelector);
-  
+
   // Create a simple form without relying on Drupal's form API
   var simpleForm = `
     <div id="tidy-feedback-form-wrapper">
@@ -12089,18 +12089,18 @@ function openFeedbackModal(elementSelector) {
       </form>
     </div>
   `;
-  
+
   // Create modal container if needed
   if (!$('#tidy-feedback-modal').length) {
     $('body').append('<div id="tidy-feedback-modal" class="tidy-feedback-ui"></div>');
   }
-  
+
   // Set the form content directly
   $('#tidy-feedback-modal').html(simpleForm);
-  
+
   // Set proper browser info after the form is created
   setBrowserInfo();
-  
+
   // Create dialog
   var dialogElement = document.getElementById('tidy-feedback-modal');
   var dialogObj = Drupal.dialog(dialogElement, {
@@ -12108,18 +12108,18 @@ function openFeedbackModal(elementSelector) {
     width: '500px',
     dialogClass: 'tidy-feedback-ui'
   });
-  
+
   // Store dialog object as a jQuery data attribute for easy access
   $(dialogElement).data('drupalDialog', dialogObj);
-  
+
   // Show the dialog
   dialogObj.showModal();
-  
+
   // Handle form submission
   $('#tidy-feedback-simple-form').on('submit', function(e) {
     e.preventDefault();
     console.log('Form submitted');
-    
+
     // Collect form data
     var formData = {
       issue_type: $('#issue_type').val(),
@@ -12129,9 +12129,9 @@ function openFeedbackModal(elementSelector) {
       element_selector: $('#tidy-feedback-element-selector').val(),
       browser_info: $('#tidy-feedback-browser-info').val()
     };
-    
+
     console.log('Submitting data:', formData);
-    
+
     // Manual AJAX submission
     $.ajax({
       url: Drupal.url('tidy-feedback/submit'),
@@ -12157,7 +12157,7 @@ function openFeedbackModal(elementSelector) {
       }
     });
   });
-  
+
   // Handle cancel button
   $('#feedback-cancel').on('click', function() {
     var dialogObj = $('#tidy-feedback-modal').data('drupalDialog');
@@ -12168,7 +12168,7 @@ function openFeedbackModal(elementSelector) {
       $('.ui-dialog-titlebar-close').click();
     }
   });
-  
+
   // Deactivate feedback mode
   toggleFeedbackMode();
 }
@@ -12185,7 +12185,7 @@ function setBrowserInfo() {
     platform: navigator.platform,
     language: navigator.language
   };
-  
+
   // Set the value as a properly formatted JSON string
   $('#tidy-feedback-browser-info').val(JSON.stringify(browserInfo));
 }
@@ -12208,16 +12208,16 @@ public function submitDirectFeedback(Request $request) {
     } else {
       $data = $request->request->all();
     }
-    
+
     \Drupal::logger('tidy_feedback')->notice('Received data type: @type', [
       '@type' => gettype($data)
     ]);
-    
+
     // Validate required fields
     if (empty($data['description'])) {
       return new JsonResponse(['status' => 'error', 'message' => 'Description is required'], 400);
     }
-    
+
     // Process browser_info - it might be a JSON string that needs decoding
     $browserInfo = $data['browser_info'] ?? '';
     if (is_string($browserInfo) && !empty($browserInfo)) {
@@ -12232,7 +12232,7 @@ public function submitDirectFeedback(Request $request) {
       // If empty or not a string, create an empty JSON object
       $browserInfo = '{}';
     }
-    
+
     // Insert into database
     $connection = \Drupal::database();
     $id = $connection->insert('tidy_feedback')
@@ -12251,9 +12251,9 @@ public function submitDirectFeedback(Request $request) {
         'status' => 'new',
       ])
       ->execute();
-    
+
     \Drupal::logger('tidy_feedback')->notice('Feedback #@id submitted successfully via direct controller.', ['@id' => $id]);
-    
+
     return new JsonResponse(['status' => 'success', 'message' => 'Feedback submitted successfully', 'id' => $id]);
   }
   catch (\Exception $e) {
@@ -12480,7 +12480,7 @@ Modify the `openFeedbackModal` function to include screenshot preview and storag
 // Function to open feedback modal
 function openFeedbackModal(elementSelector) {
   console.log('Opening feedback modal for:', elementSelector);
-  
+
   // Take a screenshot of the element before opening the modal
   takeElementScreenshot(elementSelector).then(screenshotData => {
     // Create a simple form with screenshot preview
@@ -12526,18 +12526,18 @@ function openFeedbackModal(elementSelector) {
         </form>
       </div>
     `;
-    
+
     // Create modal container if needed
     if (!$('#tidy-feedback-modal').length) {
       $('body').append('<div id="tidy-feedback-modal" class="tidy-feedback-ui"></div>');
     }
-    
+
     // Set the form content directly
     $('#tidy-feedback-modal').html(simpleForm);
-    
+
     // Set proper browser info after the form is created
     setBrowserInfo();
-    
+
     // Create dialog
     var dialogElement = document.getElementById('tidy-feedback-modal');
     var dialogObj = Drupal.dialog(dialogElement, {
@@ -12545,18 +12545,18 @@ function openFeedbackModal(elementSelector) {
       width: '600px', // Slightly wider to accommodate screenshot
       dialogClass: 'tidy-feedback-ui'
     });
-    
+
     // Store dialog object as a jQuery data attribute for easy access
     $(dialogElement).data('drupalDialog', dialogObj);
-    
+
     // Show the dialog
     dialogObj.showModal();
-    
+
     // Handle form submission
     $('#tidy-feedback-simple-form').on('submit', function(e) {
       e.preventDefault();
       console.log('Form submitted');
-      
+
       // Collect form data including screenshot
       var formData = {
         issue_type: $('#issue_type').val(),
@@ -12567,9 +12567,9 @@ function openFeedbackModal(elementSelector) {
         browser_info: $('#tidy-feedback-browser-info').val(),
         screenshot: $('#tidy-feedback-screenshot').val()
       };
-      
+
       console.log('Submitting data with screenshot');
-      
+
       // Manual AJAX submission
       $.ajax({
         url: Drupal.url('tidy-feedback/submit'),
@@ -12595,7 +12595,7 @@ function openFeedbackModal(elementSelector) {
         }
       });
     });
-    
+
     // Handle cancel button
     $('#feedback-cancel').on('click', function() {
       var dialogObj = $('#tidy-feedback-modal').data('drupalDialog');
@@ -12606,7 +12606,7 @@ function openFeedbackModal(elementSelector) {
         $('.ui-dialog-titlebar-close').click();
       }
     });
-    
+
     // Deactivate feedback mode
     toggleFeedbackMode();
   }).catch(error => {
@@ -12634,7 +12634,7 @@ function takeElementScreenshot(selector) {
         resolve('');
         return;
       }
-      
+
       // Use html2canvas library if available
       if (typeof html2canvas === 'function') {
         html2canvas(element, {
@@ -12652,33 +12652,33 @@ function takeElementScreenshot(selector) {
       } else {
         // Fallback approach using native APIs
         const rect = element.getBoundingClientRect();
-        
+
         // Create a canvas element
         const canvas = document.createElement('canvas');
         canvas.width = rect.width;
         canvas.height = rect.height;
         const ctx = canvas.getContext('2d');
-        
+
         // Use experimental Capture API if available
         if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
           navigator.mediaDevices.getDisplayMedia({video: true})
             .then(stream => {
               const video = document.createElement('video');
               video.srcObject = stream;
-              
+
               video.onloadedmetadata = () => {
                 video.play();
-                
+
                 // Draw the video frame to canvas, cropped to element dimensions
                 ctx.drawImage(
-                  video, 
+                  video,
                   rect.left, rect.top, rect.width, rect.height,
                   0, 0, canvas.width, canvas.height
                 );
-                
+
                 // Stop all tracks
                 stream.getTracks().forEach(track => track.stop());
-                
+
                 // Convert to data URL
                 const dataUrl = canvas.toDataURL('image/png');
                 resolve(dataUrl);
@@ -12788,14 +12788,14 @@ function tidy_feedback_schema() {
     'description' => 'Stores feedback submissions.',
     'fields' => [
       // ... existing fields ...
-      
+
       'screenshot' => [
         'type' => 'text',
         'size' => 'big',
         'not null' => FALSE,
         'description' => 'Base64 encoded screenshot of the element.',
       ],
-      
+
       // ... other fields ...
     ],
     'primary key' => ['id'],
@@ -12814,7 +12814,7 @@ function tidy_feedback_schema() {
  */
 function tidy_feedback_update_8001() {
   $schema = Database::getConnection()->schema();
-  
+
   if ($schema->tableExists('tidy_feedback') && !$schema->fieldExists('tidy_feedback', 'screenshot')) {
     $spec = [
       'type' => 'text',
@@ -12823,10 +12823,10 @@ function tidy_feedback_update_8001() {
       'description' => 'Base64 encoded screenshot of the element.',
     ];
     $schema->addField('tidy_feedback', 'screenshot', $spec);
-    
+
     return t('Added screenshot field to tidy_feedback table.');
   }
-  
+
   return t('No schema update required.');
 }
 ```
@@ -12848,12 +12848,12 @@ public function submitDirectFeedback(Request $request) {
     } else {
       $data = $request->request->all();
     }
-    
+
     // Validate required fields
     if (empty($data['description'])) {
       return new JsonResponse(['status' => 'error', 'message' => 'Description is required'], 400);
     }
-    
+
     // Process browser_info
     $browserInfo = $data['browser_info'] ?? '';
     if (is_string($browserInfo) && !empty($browserInfo)) {
@@ -12867,10 +12867,10 @@ public function submitDirectFeedback(Request $request) {
       // If empty or not a string, create an empty JSON object
       $browserInfo = '{}';
     }
-    
+
     // Process screenshot (it may be very large)
     $screenshot = $data['screenshot'] ?? '';
-    
+
     // Insert into database
     $connection = \Drupal::database();
     $id = $connection->insert('tidy_feedback')
@@ -12890,9 +12890,9 @@ public function submitDirectFeedback(Request $request) {
         'status' => 'new',
       ])
       ->execute();
-    
+
     \Drupal::logger('tidy_feedback')->notice('Feedback #@id submitted successfully via direct controller.', ['@id' => $id]);
-    
+
     return new JsonResponse(['status' => 'success', 'message' => 'Feedback submitted successfully', 'id' => $id]);
   }
   catch (\Exception $e) {
