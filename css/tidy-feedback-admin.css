@@ -1,0 +1,49 @@
+/**
+ * Tidy Feedback module admin styles.
+ */
+
+/* Attachment preview styles */
+.attachment-preview {
+  margin-bottom: 1em;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+}
+
+.attachment-preview a {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.attachment-preview a:hover {
+  text-decoration: none;
+}
+
+
+
+/* General admin form improvements */
+form.tidy-feedback-form .form-actions {
+  margin-top: 2em;
+}
+
+/* Status styles */
+.tidy-feedback-status-new {
+  color: #0074bd;
+  font-weight: bold;
+}
+
+.tidy-feedback-status-in-progress {
+  color: #e29700;
+  font-weight: bold;
+}
+
+.tidy-feedback-status-resolved {
+  color: #73b355;
+  font-weight: bold;
+}
+
+.tidy-feedback-status-closed {
+  color: #777;
+  font-weight: bold;
+}

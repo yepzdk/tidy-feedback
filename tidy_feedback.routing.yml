@@ -17,6 +17,7 @@ tidy_feedback.submit:
   options:
     no_cache: TRUE
 
+
 tidy_feedback.form:
   path: "/tidy-feedback/form"
   defaults:
@@ -24,6 +25,22 @@ tidy_feedback.form:
     _title: "Submit Feedback"
   requirements:
     _permission: "access tidy feedback"
+
+tidy_feedback.debug:
+  path: "/tidy-feedback/debug"
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDebugController::debugInfo'
+    _title: "Tidy Feedback Debug"
+  requirements:
+    _permission: "administer tidy feedback"
+
+tidy_feedback.debug_upload:
+  path: "/tidy-feedback/debug/upload"
+  defaults:
+    _controller: '\Drupal\tidy_feedback\Controller\TidyFeedbackDebugController::handleTestUpload'
+    _title: "Test File Upload"
+  requirements:
+    _permission: "administer tidy feedback"
 
 entity.tidy_feedback.canonical:
   path: '/tidy-feedback/{tidy_feedback}'

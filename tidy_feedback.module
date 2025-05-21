@@ -7,6 +7,7 @@
 
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\File\FileSystemInterface;
 
 /**
  * Implements hook_help().
@@ -32,10 +33,10 @@ function tidy_feedback_page_attachments(array &$attachments) {
   if ($current_user->hasPermission('access tidy feedback')) {
     $attachments['#attached']['library'][] = 'tidy_feedback/tidy_feedback';
 
-    // Add the CSRF token to JS settings
+    // Add the CSRF token to JS settings.
     $attachments['#attached']['drupalSettings']['token'] = \Drupal::csrfToken()->get();
 
-    // Debug message to console
+    // Debug message to console.
     $attachments['#attached']['drupalSettings']['tidyFeedback']['debug'] = 'Banner should be visible';
   }
 }
@@ -46,5 +47,40 @@ function tidy_feedback_page_attachments(array &$attachments) {
 function tidy_feedback_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id === 'tidy_feedback_form') {
     $form['#attached']['library'][] = 'tidy_feedback/tidy_feedback_form';
+
+    // Ensure form supports file uploads.
+    if (!isset($form['#attributes']['enctype'])) {
+      $form['#attributes']['enctype'] = 'multipart/form-data';
+    }
+  }
+
+  // Add admin styles to edit form.
+  if ($form_id === 'tidy_feedback_edit_form') {
+    $form['#attached']['library'][] = 'tidy_feedback/tidy_feedback.admin';
+    $form['#attributes']['class'][] = 'tidy-feedback-form';
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function tidy_feedback_cron() {
+  // Clean up old temporary files that weren't properly saved.
+  $directory = 'public://tidy_feedback/attachments';
+  $file_system = \Drupal::service('file_system');
+
+  // Only proceed if directory exists.
+  if ($file_system->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY)) {
+    // Get files older than 1 day (86400 seconds)
+    $files = file_scan_directory($directory, '/.*/', ['nomask' => '/(\.\.?|CVS)$/']);
+    $yesterday = time() - 86400;
+
+    foreach ($files as $file) {
+      // Check if file is temporary (has "temp_" prefix) and is old.
+      if (strpos(basename($file->filename), 'temp_') === 0 && filemtime($file->uri) < $yesterday) {
+        $file_system->delete($file->uri);
+        \Drupal::logger('tidy_feedback')->notice('Removed old temporary file: @file', ['@file' => $file->filename]);
+      }
+    }
   }
 }

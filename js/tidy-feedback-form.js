@@ -20,6 +20,11 @@
           if (!$("#tidy-feedback-url").val()) {
             $("#tidy-feedback-url").val(window.location.href);
           }
+          
+          // Add file upload validation
+          $("#tidy-feedback-file").on("change", function(e) {
+            validateFileUpload(this);
+          });
         },
       );
 
@@ -36,6 +41,24 @@
         };
 
         return JSON.stringify(browserInfo);
+      }
+      
+      // Helper function to validate file uploads
+      function validateFileUpload(fileInput) {
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        const file = fileInput.files[0];
+        
+        // Clear previous error messages
+        $(fileInput).next('.file-upload-error').remove();
+        
+        if (file) {
+          // Check file size
+          if (file.size > maxSize) {
+            $(fileInput).after('<div class="file-upload-error messages messages--error">' + 
+              Drupal.t('The file is too large. Maximum file size is 2MB.') + '</div>');
+            fileInput.value = '';
+          }
+        }
       }
     },
   };

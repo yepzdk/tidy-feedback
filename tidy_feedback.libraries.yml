@@ -17,3 +17,8 @@ tidy_feedback:
     - core/drupal.dialog
     - core/drupal.dialog.ajax
 
+tidy_feedback.admin:
+  version: 1.x
+  css:
+    theme:
+      css/tidy-feedback-admin.css: {}

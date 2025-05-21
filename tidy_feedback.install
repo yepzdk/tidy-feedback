@@ -5,6 +5,9 @@
  * Install, update, and uninstall functions for the Tidy Feedback module.
  */
 
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\File\FileSystemInterface;
+
 /**
  * Implements hook_schema().
  */
@@ -94,6 +97,12 @@ function tidy_feedback_schema(): array {
         'default' => 'new',
         'description' => 'Status of the feedback item.',
       ],
+      'file_attachment' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'Path to the file attachment.',
+      ],
       'admin_comments__value' => [
         'type' => 'text',
         'size' => 'big',
@@ -134,6 +143,12 @@ function tidy_feedback_install(): void {
     ]);
   }
 
+  // Create directory for file attachments.
+  $directory = 'public://tidy_feedback/attachments';
+  if (!\Drupal::service('file_system')->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY | FileSystemInterface::MODIFY_PERMISSIONS)) {
+    \Drupal::logger('tidy_feedback')->warning('Could not create directory for file attachments at @path', ['@path' => $directory]);
+  }
+
   \Drupal::messenger()->addStatus(t('Tidy Feedback module has been installed. Configure permissions to allow users to submit feedback.'));
 }
 
@@ -141,10 +156,10 @@ function tidy_feedback_install(): void {
  * Implements hook_uninstall().
  */
 function tidy_feedback_uninstall(): void {
-  // Delete configuration
+  // Delete configuration.
   \Drupal::configFactory()->getEditable('tidy_feedback.settings')->delete();
 
-  // Make sure we safely handle the table during uninstall
+  // Make sure we safely handle the table during uninstall.
   try {
     $schema = \Drupal::database()->schema();
     if ($schema->tableExists('tidy_feedback')) {
@@ -153,5 +168,62 @@ function tidy_feedback_uninstall(): void {
   }
   catch (\Exception $e) {
     \Drupal::logger('tidy_feedback')->error('Error dropping table during uninstall: @error', ['@error' => $e->getMessage()]);
+  }
+}
+
+/**
+ * Add file_attachment field to tidy_feedback table.
+ */
+function tidy_feedback_update_9001(): void {
+  $schema = \Drupal::database()->schema();
+  $spec = [
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'description' => 'Path to the file attachment.',
+  ];
+
+  if ($schema->tableExists('tidy_feedback') && !$schema->fieldExists('tidy_feedback', 'file_attachment')) {
+    $schema->addField('tidy_feedback', 'file_attachment', $spec);
+    \Drupal::logger('tidy_feedback')->notice('Added file_attachment field to tidy_feedback table.');
+  }
+}
+
+/**
+ * Update entity definitions for file_attachment field.
+ */
+function tidy_feedback_update_9002(): void {
+  // Install the definition update manager.
+  $entity_definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+
+  // Get the current entity type definition for feedback entities.
+  $entity_type = $entity_definition_update_manager->getEntityType('tidy_feedback');
+
+  if ($entity_type) {
+    // Add the field.
+    $storage_definition = BaseFieldDefinition::create('uri')
+      ->setLabel(t('File Attachment'))
+      ->setDescription(t('A file uploaded with the feedback.'))
+      ->setDisplayOptions('view', [
+        'label' => 'above',
+        'type' => 'file_link',
+        'weight' => 9,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'file',
+        'weight' => 9,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    // Add it to both the entity definition and the database schema.
+    $entity_definition_update_manager->installFieldStorageDefinition(
+      'file_attachment',
+      'tidy_feedback',
+      'tidy_feedback',
+      $storage_definition
+    );
+
+    \Drupal::logger('tidy_feedback')->notice('Installed file_attachment field definition to feedback entity.');
   }
 }

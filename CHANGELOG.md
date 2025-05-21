@@ -7,4 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- [PR-13](https://github.com/yepzdk/tidy-feedback/pull/13)
+  Add file upload
+
 [Unreleased]: https://github.com/yepzdk/tidy-feedback
